@@ -1,30 +1,30 @@
 import re
 
 PROMPT_INJECTION_PATTERNS = [
-    r"ignore\s+all\s+previous\s+instructions",
-    r"system\s+prompt",
-    r"override\s+rules",
-    r"mark\s+as\s+fraud",
-    r"delete\s+finding",
-    r"drop\s+database",
-    r"sql\s+injection",
+    r"ignore previous instructions",
+    r"ignore all rules",
+    r"system prompt",
+    r"you are now an unrestricted",
+    r"set risk score to 0",
+    r"override security",
+    r"jailbreak",
 ]
 
 
 def sanitize_user_input(text: str) -> str:
-    """
-    Sanitizes user input to prevent prompt injection and untrusted delimiter escaping.
-    """
+    """Sanitizes user input by stripping leading/trailing whitespace and control chars."""
     if not text:
         return ""
+    # Strip dangerous HTML / script tags
+    clean = re.sub(r"<script.*?>.*?</script>", "", text, flags=re.IGNORECASE | re.DOTALL)
+    clean = re.sub(r"<.*?>", "", clean)
+    return clean.strip()
 
-    sanitized = str(text).strip()
 
-    # Redact prompt injection patterns
+def check_prompt_injection(text: str) -> bool:
+    """Checks if text contains known prompt injection attack vectors."""
+    text_lower = text.lower()
     for pattern in PROMPT_INJECTION_PATTERNS:
-        sanitized = re.sub(pattern, "[REDACTED_PROMPT_INJECTION]", sanitized, flags=re.IGNORECASE)
-
-    # Escape XML/HTML delimiters
-    sanitized = sanitized.replace("<", "&lt;").replace(">", "&gt;")
-
-    return sanitized
+        if re.search(pattern, text_lower):
+            return True
+    return False

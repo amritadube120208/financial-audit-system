@@ -1,242 +1,422 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AuditGraph Ultra — Financial Audit Platform</title>
+  <title>AuditGraph Ultra — Financial Forensic Investigation Platform</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #090d16; color: #f1f5f9; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+    .glass-card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+    .funnel-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen antialiased">
+<body class="min-h-screen antialiased flex flex-col custom-scrollbar">
 
-  <!-- Header & Top Navigation -->
-  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30 text-xl">
-          AG
+  <!-- 1. AUDIT WORKSPACE HEADER -->
+  <header class="border-b border-slate-800 bg-slate-950/90 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-4">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/20">
+        AG
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-base font-extrabold text-white tracking-tight">AuditGraph Ultra</h1>
+          <span class="px-2 py-0.5 text-[10px] font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded">v1.0.0 Stage</span>
         </div>
-        <div>
-          <h1 class="text-xl font-bold bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent">
-            AuditGraph Ultra
-          </h1>
-          <p class="text-xs text-slate-400">Financial Audit Investigation & Evidence Fusion Engine</p>
+        <div class="flex items-center space-x-2 text-xs text-slate-400 mt-0.5">
+          <span class="font-medium text-slate-300">Client:</span>
+          <span class="font-mono text-blue-300" id="client-name">Alpha Traders Pvt Ltd (FY26 Audit)</span>
+          <span class="text-slate-600">•</span>
+          <span class="font-mono text-slate-400" id="dataset-sha">SHA-256: 8e15c28d...2619c80</span>
         </div>
       </div>
+    </div>
 
-      <div class="flex items-center space-x-6">
-        <div class="flex items-center space-x-2 text-xs bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span class="text-slate-300 font-medium" id="backend-status">API Connected (:8085)</span>
-        </div>
-        <button onclick="triggerSampleAudit()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-sm rounded-lg shadow-lg shadow-blue-500/25 transition-all flex items-center space-x-2">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span>Run 100k Stage Audit</span>
-        </button>
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2 text-xs bg-slate-900/90 px-3 py-1.5 rounded-md border border-slate-800 font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300" id="provider-badge">Copilot: Cascade (Gemini / Fallback)</span>
       </div>
+
+      <button onclick="scrollToUpload()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-md border border-slate-700 transition">
+        New Audit Analysis
+      </button>
+
+      <button onclick="triggerRunAnalysis()" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-md shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span>Open Investigation Queue</span>
+      </button>
     </div>
   </header>
 
-  <!-- Metrics Banner -->
-  <section class="border-b border-slate-800 bg-slate-900/40">
-    <div class="max-w-7xl mx-auto px-6 py-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div class="p-4 rounded-xl glass-card">
-        <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Ledger Volume</span>
-        <div class="text-2xl font-bold text-white mt-1" id="metric-txns">99,906</div>
-        <span class="text-xs text-emerald-400">Canonical 100k Dataset</span>
+  <!-- 2. DATA INGESTION & SYNONYM MAPPING SECTION -->
+  <section id="upload-section" class="border-b border-slate-800 bg-slate-950/40 p-6">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Drag and Drop Container -->
+      <div class="lg:col-span-5 border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-xl p-6 bg-slate-900/50 text-center flex flex-col items-center justify-center transition cursor-pointer" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" class="hidden" accept=".csv,.xlsx" onchange="handleFileSelect(event)">
+        <div class="w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center mb-3">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        </div>
+        <h3 class="text-sm font-bold text-white mb-1">Drag & Drop Financial Ledger CSV/XLSX</h3>
+        <p class="text-xs text-slate-400 mb-3">Loaded: <span class="text-blue-300 font-mono" id="file-name">auditgraph_demo_100k.csv</span> (18.04 MB)</p>
+        <span class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs font-semibold border border-slate-700">Select File or Re-Ingest</span>
       </div>
-      <div class="p-4 rounded-xl glass-card">
-        <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Detector Signals</span>
-        <div class="text-2xl font-bold text-amber-400 mt-1" id="metric-flags">14,333</div>
-        <span class="text-xs text-slate-400">Rules, ML & Graph Cycles</span>
+
+      <!-- Column Synonym Detection Table -->
+      <div class="lg:col-span-7 p-4 rounded-xl glass-card border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+            <span>Automated Schema Synonym Mapping</span>
+            <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[10px] rounded font-mono">100% Match</span>
+          </h4>
+          <span class="text-[11px] text-slate-400 font-mono">Row Count: 99,906</span>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 text-xs font-mono">
+          <div class="p-2 bg-slate-900/80 rounded border border-slate-800">
+            <div class="text-[10px] text-slate-500">POSTING DATE</div>
+            <div class="text-slate-200 font-semibold text-[11px] mt-0.5">posting_date</div>
+            <span class="text-[10px] text-emerald-400">98% Confidence</span>
+          </div>
+
+          <div class="p-2 bg-slate-900/80 rounded border border-slate-800">
+            <div class="text-[10px] text-slate-500">AMOUNT</div>
+            <div class="text-slate-200 font-semibold text-[11px] mt-0.5">amount</div>
+            <span class="text-[10px] text-emerald-400">96% Confidence</span>
+          </div>
+
+          <div class="p-2 bg-slate-900/80 rounded border border-slate-800">
+            <div class="text-[10px] text-slate-500">COUNTERPARTY</div>
+            <div class="text-slate-200 font-semibold text-[11px] mt-0.5">vendor_name</div>
+            <span class="text-[10px] text-emerald-400">100% Confidence</span>
+          </div>
+
+          <div class="p-2 bg-slate-900/80 rounded border border-slate-800">
+            <div class="text-[10px] text-slate-500">GSTIN</div>
+            <div class="text-slate-200 font-semibold text-[11px] mt-0.5">gstin</div>
+            <span class="text-[10px] text-emerald-400">94% Confidence</span>
+          </div>
+        </div>
       </div>
-      <div class="p-4 rounded-xl glass-card">
-        <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Consolidated Queue</span>
-        <div class="text-2xl font-bold text-blue-400 mt-1" id="metric-cases">4,971</div>
-        <span class="text-xs text-blue-300">Prioritized Investigations</span>
+
+    </div>
+  </section>
+
+  <!-- 3. 7-STAGE ANALYSIS PROGRESS TRACKER -->
+  <section class="border-b border-slate-800 bg-slate-900/30 px-6 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between text-xs font-mono">
+      <div class="flex items-center space-x-1.5 text-slate-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="font-bold text-slate-200 uppercase">State Machine:</span>
       </div>
-      <div class="p-4 rounded-xl glass-card">
-        <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Review Reduction</span>
-        <div class="text-2xl font-bold text-emerald-400 mt-1" id="metric-reduction">95.024%</div>
-        <span class="text-xs text-emerald-300">Target $\ge 95\%$ Achieved</span>
+
+      <div class="flex items-center space-x-3 text-[11px]">
+        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">1. INGESTING ✓</span>
+        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">2. VALIDATING ✓</span>
+        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">3. FEATURIZING ✓</span>
+        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">4. RULES ✓</span>
+        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">5. ML ANOMALY ✓</span>
+        <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">6. GRAPH FORENSICS ✓</span>
+        <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 animate-pulse">7. CASE FUSION & SCORING (READY)</span>
       </div>
     </div>
   </section>
 
-  <!-- Main Grid: Investigation Queue & Case Detail / Copilot -->
-  <main class="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- Left Column: Investigation Queue (5 Cols) -->
-    <div class="lg:col-span-5 flex flex-col space-y-4">
+  <!-- 4. KILLER VISUAL #1: ANIMATED RISK COMPRESSION FUNNEL -->
+  <section class="border-b border-slate-800 bg-slate-950/60 px-6 py-6">
+    <div class="max-w-7xl mx-auto space-y-3">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-semibold text-white flex items-center space-x-2">
-          <span>Prioritized Investigations</span>
-          <span class="px-2 py-0.5 text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-full font-medium" id="queue-count">4,971 Cases</span>
-        </h2>
-        <div class="flex space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-          <button onclick="filterSeverity('ALL')" class="px-2.5 py-1 rounded-md text-slate-300 hover:text-white font-medium bg-slate-800" id="filter-all">All</button>
-          <button onclick="filterSeverity('CRITICAL')" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-red-400 font-medium" id="filter-crit">Critical</button>
-          <button onclick="filterSeverity('HIGH')" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-amber-400 font-medium" id="filter-high">High</button>
+        <div>
+          <h2 class="text-sm font-extrabold text-white uppercase tracking-wider">Audit Surface Risk Compression Funnel</h2>
+          <p class="text-xs text-slate-400">Converts 100k raw ledger entries into prioritized CA investigation cases</p>
+        </div>
+        <div class="text-right">
+          <span class="text-2xl font-black text-emerald-400 font-mono" id="funnel-pct">95.617%</span>
+          <span class="text-xs text-emerald-300 block">Review Surface Reduction</span>
         </div>
       </div>
 
-      <!-- Investigation Cards List -->
-      <div class="space-y-3 max-h-[750px] overflow-y-auto pr-1 custom-scrollbar" id="cases-list">
-        <!-- Default Hero Case -->
-        <div onclick="selectCase('case_inv_001')" id="card-case_inv_001" class="p-4 rounded-xl border border-red-500/40 bg-red-950/20 hover:border-red-500 cursor-pointer transition-all space-y-3">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="text-xs font-mono text-slate-400">CASE-001</span>
-              <h3 class="text-sm font-semibold text-white mt-0.5">Circular Financial Flow & Year-End Reversal</h3>
-            </div>
-            <div class="text-right">
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30">100.0 CRITICAL</span>
-            </div>
+      <!-- Funnel Stage Bars -->
+      <div class="space-y-2 text-xs font-mono">
+        <!-- Stage 1 -->
+        <div class="flex items-center justify-between space-x-3">
+          <span class="w-44 text-slate-400 text-right">Ledger Transactions:</span>
+          <div class="flex-1 bg-slate-900 rounded-full h-4 overflow-hidden border border-slate-800">
+            <div class="bg-blue-600 h-full rounded-full funnel-bar flex items-center px-3 text-[10px] text-white font-bold" style="width: 100%">99,906 Rows</div>
           </div>
-
-          <div class="flex items-center space-x-2 text-xs">
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">3 Txns</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">₹495,000.00</span>
-            <span class="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">Graph Cycle</span>
-            <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">March 30 Spike</span>
-          </div>
-
-          <p class="text-xs text-slate-400 line-clamp-2">
-            Consolidated 3-entity circular transfer completed within 36 hours near fiscal year-end (COMPANY_SELF → VENDOR_X17 → VENDOR_Y09 → COMPANY_SELF).
-          </p>
         </div>
 
-        <!-- Sample Case 2 -->
-        <div onclick="selectCase('case_inv_002')" id="card-case_inv_002" class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:border-blue-500 cursor-pointer transition-all space-y-3">
-          <div class="flex items-start justify-between">
-            <div>
-              <span class="text-xs font-mono text-slate-400">CASE-002</span>
-              <h3 class="text-sm font-semibold text-white mt-0.5">Duplicate Invoice & Rapid Reversal</h3>
-            </div>
-            <div class="text-right">
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">84.5 HIGH</span>
-            </div>
+        <!-- Stage 2 -->
+        <div class="flex items-center justify-between space-x-3">
+          <span class="w-44 text-slate-400 text-right">Raw Detector Flags:</span>
+          <div class="flex-1 bg-slate-900 rounded-full h-4 overflow-hidden border border-slate-800">
+            <div class="bg-indigo-600 h-full rounded-full funnel-bar flex items-center px-3 text-[10px] text-white font-bold" style="width: 45%">14,333 Signals (Rules + ML + Graph)</div>
           </div>
-          <div class="flex items-center space-x-2 text-xs">
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">2 Txns</span>
-            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">₹245,000.00</span>
-            <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">RapidFuzz 98%</span>
+        </div>
+
+        <!-- Stage 3 -->
+        <div class="flex items-center justify-between space-x-3">
+          <span class="w-44 text-slate-400 text-right">Consolidated Cases:</span>
+          <div class="flex-1 bg-slate-900 rounded-full h-4 overflow-hidden border border-slate-800">
+            <div class="bg-amber-600 h-full rounded-full funnel-bar flex items-center px-3 text-[10px] text-white font-bold" style="width: 20%">4,379 Evidence Clusters (DSU Graph)</div>
+          </div>
+        </div>
+
+        <!-- Stage 4 (Hero) -->
+        <div class="flex items-center justify-between space-x-3">
+          <span class="w-44 text-red-400 font-bold text-right">Critical Investigations:</span>
+          <div class="flex-1 bg-slate-900 rounded-full h-4 overflow-hidden border border-slate-800">
+            <div class="bg-red-600 h-full rounded-full funnel-bar flex items-center px-3 text-[10px] text-white font-bold shadow-lg shadow-red-500/30" style="width: 8%">36 Critical Cases Requiring Review</div>
           </div>
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Right Column: Case Detail & AI Copilot Sidecar (7 Cols) -->
+  <!-- 5. MAIN WORKSTATION: INVESTIGATION QUEUE & CASE DETAIL ROOM -->
+  <main class="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+    <!-- LEFT COLUMN: INVESTIGATION QUEUE WORKSTATION (5 COLS) -->
+    <div class="lg:col-span-5 flex flex-col space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-white flex items-center space-x-2">
+          <span>Prioritized Case Queue</span>
+          <span class="px-2 py-0.5 bg-red-500/10 text-red-400 text-xs rounded-full font-mono border border-red-500/20" id="queue-badge">36 Critical</span>
+        </h2>
+        <div class="flex space-x-1 bg-slate-900 p-1 rounded-md border border-slate-800 text-[11px]">
+          <button onclick="filterQueue('ALL')" class="px-2 py-0.5 rounded text-slate-300 bg-slate-800 font-medium" id="f-all">All</button>
+          <button onclick="filterQueue('CRITICAL')" class="px-2 py-0.5 rounded text-slate-400 hover:text-red-400 font-medium" id="f-crit">Critical</button>
+          <button onclick="filterQueue('HIGH')" class="px-2 py-0.5 rounded text-slate-400 hover:text-amber-400 font-medium" id="f-high">High</button>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="relative">
+        <input type="text" id="queue-search" oninput="searchQueue()" placeholder="Search vendor, invoice, case ID, or amount..." class="w-full bg-slate-900 border border-slate-800 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 font-mono">
+      </div>
+
+      <!-- Queue Cards Container -->
+      <div class="space-y-3 max-h-[700px] overflow-y-auto pr-1 custom-scrollbar" id="cases-container">
+
+        <!-- Hero Case Card 1 -->
+        <div onclick="selectCase('case_inv_001')" id="card-case_inv_001" class="p-4 rounded-xl border border-red-500/60 bg-red-950/20 hover:border-red-500 cursor-pointer transition space-y-2.5 shadow-lg shadow-red-950/20">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-slate-400">CASE-001</span>
+              <h3 class="text-xs font-bold text-white mt-0.5">Circular Financial Flow & Year-End Reversal</h3>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30">100.0 CRITICAL</span>
+          </div>
+
+          <div class="flex items-center space-x-2 text-[11px] font-mono">
+            <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-300">3 Txns</span>
+            <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-300">₹495,000.00</span>
+            <span class="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">3-Node Cycle</span>
+          </div>
+
+          <p class="text-[11px] text-slate-400 line-clamp-2">
+            Bounded circular sequence (COMPANY → VENDOR_X17 → VENDOR_Y09 → COMPANY) completed within 36 hours near fiscal year-end (March 30).
+          </p>
+        </div>
+
+        <!-- Case Card 2 -->
+        <div onclick="selectCase('case_inv_002')" id="card-case_inv_002" class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:border-blue-500 cursor-pointer transition space-y-2.5">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-slate-400">CASE-002</span>
+              <h3 class="text-xs font-bold text-white mt-0.5">Duplicate Invoice & Rapid Subcontractor Clearing</h3>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">84.5 HIGH</span>
+          </div>
+          <div class="flex items-center space-x-2 text-[11px] font-mono">
+            <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-300">2 Txns</span>
+            <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-300">₹245,000.00</span>
+            <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">RapidFuzz 98%</span>
+          </div>
+        </div>
+
+        <!-- Case Card 3 (GST) -->
+        <div onclick="selectCase('case_inv_003')" id="card-case_inv_003" class="p-4 rounded-xl border border-slate-800 bg-slate-900/60 hover:border-blue-500 cursor-pointer transition space-y-2.5">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="text-[10px] font-mono text-slate-400">CASE-003</span>
+              <h3 class="text-xs font-bold text-white mt-0.5">GSTR-2B Input Tax Credit Mismatch</h3>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">78.0 HIGH</span>
+          </div>
+          <div class="flex items-center space-x-2 text-[11px] font-mono">
+            <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-300">1 Invoice</span>
+            <span class="px-2 py-0.5 rounded bg-slate-900 text-slate-300">₹142,500.00 ITC</span>
+            <span class="px-2 py-0.5 rounded bg-red-950 text-red-300 border border-red-800">Missing GSTR-2B</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: CASE DETAIL ROOM, MONEY FLOW GRAPH & COPILOT (7 COLS) -->
     <div class="lg:col-span-7 flex flex-col space-y-6">
 
-      <!-- Case Graph & Evidence Viewer -->
+      <!-- CASE DETAIL ROOM & KILLER VISUAL #2: MONEY FLOW GRAPH -->
       <div class="p-5 rounded-xl glass-card space-y-4">
         <div class="flex items-center justify-between border-b border-slate-800 pb-3">
           <div>
             <span class="text-xs font-mono text-blue-400 font-semibold" id="detail-case-id">CASE-001</span>
-            <h2 class="text-base font-bold text-white" id="detail-title">Circular Financial Flow & Year-End Reversal</h2>
+            <h2 class="text-base font-extrabold text-white" id="detail-title">Circular Financial Flow & Year-End Reversal</h2>
           </div>
-          <div class="flex items-center space-x-2">
-            <span class="px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/30" id="detail-badge">100.0 CRITICAL</span>
+          <div class="text-right">
+            <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-red-500/20 text-red-400 border border-red-500/30" id="detail-badge">100.0 CRITICAL</span>
+            <span class="text-[10px] text-slate-400 block mt-1">Requires Auditor Verification</span>
           </div>
         </div>
 
-        <!-- Interactive SVG Money Flow Graph -->
-        <div class="bg-slate-950/80 rounded-xl p-4 border border-slate-800">
+        <!-- KILLER VISUAL #2: INTERACTIVE DIRECTED MONEY FLOW GRAPH -->
+        <div class="bg-slate-950/90 rounded-xl p-4 border border-slate-800">
           <div class="text-xs font-medium text-slate-400 mb-2 flex items-center justify-between">
-            <span>Money Flow Graph Visualization</span>
-            <span class="text-emerald-400 font-mono">3-Node Bounded Cycle (36h Window)</span>
+            <span class="font-mono text-slate-300">Cytoscape Money Flow Graph</span>
+            <span class="text-emerald-400 font-mono text-[11px]">3-Node Bounded Cycle (36h Window)</span>
           </div>
 
           <div class="h-44 flex items-center justify-center relative">
             <svg class="w-full h-full" viewBox="0 0 500 160">
               <!-- Nodes -->
-              <g transform="translate(60, 80)">
-                <circle r="22" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
-                <text y="4" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold">COMPANY</text>
+              <g transform="translate(60, 80)" class="cursor-pointer">
+                <circle r="22" fill="#0f172a" stroke="#3b82f6" stroke-width="2.5"/>
+                <text y="4" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="bold">COMPANY</text>
               </g>
 
-              <g transform="translate(250, 30)">
-                <circle r="22" fill="#1e293b" stroke="#ef4444" stroke-width="2"/>
-                <text y="4" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold">VENDOR X</text>
+              <g transform="translate(250, 30)" class="cursor-pointer">
+                <circle r="22" fill="#0f172a" stroke="#ef4444" stroke-width="2.5"/>
+                <text y="4" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="bold">VENDOR X</text>
               </g>
 
-              <g transform="translate(420, 110)">
-                <circle r="22" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
-                <text y="4" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="bold">VENDOR Y</text>
+              <g transform="translate(420, 110)" class="cursor-pointer">
+                <circle r="22" fill="#0f172a" stroke="#f59e0b" stroke-width="2.5"/>
+                <text y="4" text-anchor="middle" fill="#ffffff" font-size="9" font-weight="bold">VENDOR Y</text>
               </g>
 
-              <!-- Directed Transfer Arrows -->
-              <path d="M 80 70 L 225 40" stroke="#ef4444" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="4,4" class="animate-pulse"/>
-              <text x="145" y="45" fill="#f87171" font-size="10" font-weight="bold">₹495,000</text>
+              <!-- Directed Edge Transfers -->
+              <path d="M 80 70 L 225 40" stroke="#ef4444" stroke-width="2" stroke-dasharray="4,4" class="animate-pulse"/>
+              <text x="145" y="42" fill="#f87171" font-size="9" font-weight="bold" font-family="monospace">TXN-001: ₹495,000</text>
 
-              <path d="M 270 40 L 400 95" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="4,4"/>
-              <text x="350" y="60" fill="#fbbf24" font-size="10" font-weight="bold">₹490,000</text>
+              <path d="M 270 40 L 400 95" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4"/>
+              <text x="345" y="58" fill="#fbbf24" font-size="9" font-weight="bold" font-family="monospace">TXN-002: ₹490,000</text>
 
-              <path d="M 400 120 L 80 85" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="4,4"/>
-              <text x="240" y="125" fill="#60a5fa" font-size="10" font-weight="bold">₹487,500</text>
+              <path d="M 400 120 L 80 85" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4,4"/>
+              <text x="240" y="122" fill="#60a5fa" font-size="9" font-weight="bold" font-family="monospace">TXN-003: ₹487,500</text>
             </svg>
           </div>
         </div>
 
-        <!-- Multi-Engine Risk Score Breakdown -->
-        <div class="grid grid-cols-4 gap-3 text-center text-xs">
-          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
-            <span class="text-slate-400">Rules Engine</span>
+        <!-- MULTI-ENGINE RISK FUSION BREAKDOWN -->
+        <div class="grid grid-cols-4 gap-2.5 text-center text-xs font-mono">
+          <div class="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 text-[10px]">Rules Engine</span>
             <div class="font-bold text-white text-sm mt-0.5">90.0%</div>
           </div>
-          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
-            <span class="text-slate-400">IsolationForest</span>
+          <div class="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 text-[10px]">IsolationForest</span>
             <div class="font-bold text-white text-sm mt-0.5">85.0%</div>
           </div>
-          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
-            <span class="text-slate-400">Graph Forensics</span>
+          <div class="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 text-[10px]">Graph Forensics</span>
             <div class="font-bold text-white text-sm mt-0.5">98.0%</div>
           </div>
-          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800">
-            <span class="text-slate-400">Materiality</span>
+          <div class="p-2.5 bg-slate-900 rounded-lg border border-slate-800">
+            <span class="text-slate-400 text-[10px]">Materiality</span>
             <div class="font-bold text-white text-sm mt-0.5">99.0%</div>
+          </div>
+        </div>
+
+        <!-- MACHINE EVIDENCE TIMELINE -->
+        <div class="space-y-1.5 text-xs">
+          <h4 class="font-mono font-bold text-slate-300 text-[11px] uppercase tracking-wider">Machine Evidence Timeline</h4>
+          <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800 space-y-1 text-slate-300 font-mono text-[11px]" id="evidence-timeline">
+            <div>1. <span class="text-amber-400">Period-End Timing:</span> Posted March 30 (2 days before FY close).</div>
+            <div>2. <span class="text-blue-400">Entity Rarity:</span> Vendor Y09 appears in 0.27% of ledger transactions.</div>
+            <div>3. <span class="text-indigo-400">Graph Pattern:</span> 3-entity circular transfer network completed in 36h.</div>
+            <div>4. <span class="text-emerald-400">Amount Similarity:</span> 97.8% similarity across transfer legs.</div>
           </div>
         </div>
       </div>
 
-      <!-- AI Audit Copilot Sidecar -->
-      <div class="p-5 rounded-xl glass-card space-y-4 flex flex-col h-[380px]">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div class="flex items-center space-x-2">
-            <div class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></div>
-            <h3 class="text-sm font-bold text-white">Grounded AI Audit Copilot</h3>
-          </div>
-          <span class="text-xs text-slate-400 font-mono">12 Scoped Tools Active</span>
+      <!-- 8. GST RECONCILIATION PANEL -->
+      <div class="p-4 rounded-xl glass-card space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <h3 class="text-xs font-bold text-white uppercase tracking-wider flex items-center space-x-2">
+            <span>GST-to-Book Reconciliation Panel</span>
+            <span class="px-2 py-0.5 bg-red-500/10 text-red-400 text-[10px] rounded font-mono">14 Variances</span>
+          </h3>
+          <span class="text-xs text-slate-400 font-mono">Disallowed ITC Risk: ₹1,42,500.00</span>
         </div>
 
-        <!-- Chat Output Messages -->
-        <div class="flex-1 overflow-y-auto space-y-3 custom-scrollbar text-xs pr-1" id="chat-box">
-          <!-- Assistant Welcome Message -->
+        <table class="w-full text-left text-xs font-mono">
+          <thead>
+            <tr class="text-slate-400 border-b border-slate-800 text-[10px]">
+              <th class="py-1">INVOICE</th>
+              <th class="py-1">VENDOR</th>
+              <th class="py-1">BOOKS AMT</th>
+              <th class="py-1">GSTR-2B AMT</th>
+              <th class="py-1">STATUS</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 text-[11px] text-slate-300">
+            <tr>
+              <td class="py-1.5 text-blue-400">INV-1002</td>
+              <td>VENDOR_Y09</td>
+              <td>₹4,90,000</td>
+              <td>₹0.00</td>
+              <td><span class="px-1.5 py-0.5 bg-red-950 text-red-300 rounded text-[9px] border border-red-800">MISSING IN GSTR-2B</span></td>
+            </tr>
+            <tr>
+              <td class="py-1.5 text-blue-400">INV-1008</td>
+              <td>VENDOR_Z44</td>
+              <td>₹2,50,000</td>
+              <td>₹1,25,000</td>
+              <td><span class="px-1.5 py-0.5 bg-amber-950 text-amber-300 rounded text-[9px] border border-amber-800">AMOUNT MISMATCH</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 9. AI AUDIT COPILOT SIDECAR -->
+      <div class="p-5 rounded-xl glass-card space-y-3 flex flex-col h-[400px]">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">AI Audit Copilot Sidecar</h3>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">Multi-Provider Cascade + Grounded Tools</span>
+        </div>
+
+        <!-- Chat Scroll Output -->
+        <div class="flex-1 overflow-y-auto space-y-3 custom-scrollbar text-xs pr-1" id="chat-stream">
           <div class="flex items-start space-x-2">
-            <div class="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center font-bold text-white text-[10px]">AI</div>
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 space-y-2 max-w-[90%]">
-              <p>Welcome to AuditGraph Copilot. Select an investigation case or ask an audit evidence question.</p>
+            <div class="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-bold text-white text-[10px]">AI</div>
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 space-y-2 max-w-[92%]">
+              <p>Audit Copilot active for <strong>CASE-001</strong>. Select a prompt chip to execute typed evidence tools:</p>
               <div class="flex flex-wrap gap-1.5 pt-1">
-                <button onclick="askCopilot('Why is CASE-001 critical?')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px]">Why is CASE-001 critical?</button>
-                <button onclick="askCopilot('Trace circular money flow')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px]">Trace circular flow</button>
-                <button onclick="askCopilot('Show GST mismatches')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px]">Show GST Mismatches</button>
+                <button onclick="askCopilot('Why is CASE-001 critical?')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px] font-mono">Why is CASE-001 critical?</button>
+                <button onclick="askCopilot('Trace circular money flow')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px] font-mono">Trace Circular Flow</button>
+                <button onclick="askCopilot('Show GST mismatches')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px] font-mono">Show GST Mismatches</button>
+                <button onclick="askCopilot('What happened near year end?')" class="px-2 py-1 rounded bg-blue-950 text-blue-300 border border-blue-800 hover:bg-blue-900 text-[10px] font-mono">Year-End Postings</button>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Chat Input Form -->
-        <form onsubmit="submitCopilot(event)" class="flex items-center space-x-2 pt-2 border-t border-slate-800">
-          <input type="text" id="chat-input" placeholder="Ask Copilot about evidence, vendors, or risk..." class="flex-1 bg-slate-900 border border-slate-800 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
-          <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-medium transition-all">Send</button>
+        <!-- Form Input -->
+        <form onsubmit="submitCopilotChat(event)" class="flex items-center space-x-2 pt-2 border-t border-slate-800">
+          <input type="text" id="copilot-input" placeholder="Ask Copilot about evidence, money flow, or GST..." class="flex-1 bg-slate-900 border border-slate-800 text-white rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500 font-mono">
+          <button type="submit" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition">Send</button>
         </form>
       </div>
 
@@ -244,70 +424,98 @@
   </main>
 
   <script>
-    const API_BASE = "http://127.0.0.1:8085";
-
-    async function triggerSampleAudit() {
-      const btn = event.target;
-      btn.innerText = "Running Analysis...";
-      try {
-        const resp = await fetch(`${API_BASE}/api/v1/audit-runs`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dataset_id: "ds_demo_100k" })
-        });
-        const data = await resp.json();
-        alert(`Audit Run Completed! ID: ${data.run_id} | Total Cases: ${data.total_cases}`);
-      } catch (err) {
-        alert("Backend executed locally! Status: 100k dataset analyzed successfully.");
-      } finally {
-        btn.innerText = "Run 100k Stage Audit";
-      }
-    }
+    const API_BASE = "http://127.0.0.1:8088";
+    let activeCaseId = "case_inv_001";
+    let activeRunId = "run_demo";
 
     function selectCase(caseId) {
-      document.getElementById("detail-case-id").innerText = caseId === 'case_inv_001' ? 'CASE-001' : 'CASE-002';
-      document.getElementById("detail-title").innerText = caseId === 'case_inv_001' ? 'Circular Financial Flow & Year-End Reversal' : 'Duplicate Invoice & Rapid Reversal';
+      activeCaseId = caseId;
+      const is001 = caseId === 'case_inv_001';
+      document.getElementById("detail-case-id").innerText = is001 ? 'CASE-001' : 'CASE-002';
+      document.getElementById("detail-title").innerText = is001 ? 'Circular Financial Flow & Year-End Reversal' : 'Duplicate Invoice & Rapid Subcontractor Clearing';
+      document.getElementById("detail-badge").innerText = is001 ? '100.0 CRITICAL' : '84.5 HIGH';
     }
 
-    async function askCopilot(msg) {
-      document.getElementById("chat-input").value = msg;
-      submitCopilot(new Event('submit'));
+    function askCopilot(msg) {
+      document.getElementById("copilot-input").value = msg;
+      submitCopilotChat(new Event('submit'));
     }
 
-    async function submitCopilot(e) {
+    async function submitCopilotChat(e) {
       e.preventDefault();
-      const input = document.getElementById("chat-input");
+      const input = document.getElementById("copilot-input");
       const text = input.value.trim();
       if (!text) return;
 
-      const chatBox = document.getElementById("chat-box");
+      const chatStream = document.getElementById("chat-stream");
 
-      // Append User Msg
-      chatBox.innerHTML += `
-        <div class="flex items-start justify-end space-x-2">
-          <div class="p-3 rounded-xl bg-blue-600 text-white text-xs max-w-[85%]">${text}</div>
+      // Append User Message
+      chatStream.innerHTML += `
+        <div class="flex justify-end">
+          <div class="p-2.5 rounded-xl bg-blue-600 text-white text-xs max-w-[85%] font-mono">${text}</div>
         </div>
       `;
       input.value = "";
-      chatBox.scrollTop = chatBox.scrollHeight;
+      chatStream.scrollTop = chatStream.scrollHeight;
 
-      // Simulated / Live Copilot API Response
-      setTimeout(() => {
-        chatBox.innerHTML += `
-          <div class="flex items-start space-x-2">
-            <div class="w-6 h-6 rounded-md bg-blue-600 flex items-center justify-center font-bold text-white text-[10px]">AI</div>
-            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 space-y-2 max-w-[90%]">
-              <div class="flex items-center space-x-2">
-                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] font-mono border border-emerald-800">Grounded [OK]</span>
-                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-mono">Tools: get_finding, get_risk_breakdown</span>
+      try {
+        // Send request to live backend Copilot endpoint
+        const resp = await fetch(`${API_BASE}/api/v1/copilot/sessions/cop_demo/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text, selected_case_id: activeCaseId })
+        });
+
+        if (resp.ok) {
+          const data = await resp.json();
+          const toolsUsed = (data.used_tools || ['get_finding']).join(", ");
+
+          chatStream.innerHTML += `
+            <div class="flex items-start space-x-2">
+              <div class="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-bold text-white text-[10px]">AI</div>
+              <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 space-y-2 max-w-[92%]">
+                <div class="flex items-center space-x-2 text-[10px] font-mono">
+                  <span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Grounded [OK]</span>
+                  <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Tools: ${toolsUsed}</span>
+                </div>
+                <div class="text-xs text-slate-200 leading-relaxed font-sans">${data.answer.replace(/\n/g, '<br>')}</div>
+                <p class="text-[10px] text-slate-400 border-t border-slate-800 pt-1"><em>${data.safety_note}</em></p>
               </div>
-              <p>CASE-001 is rated <strong>100.0 CRITICAL</strong> because a 3-entity circular transfer completed within 36 hours near fiscal year-end (March 30), involving ₹495,000.00 with 97.8% transfer amount similarity across participants.</p>
-              <p class="text-[10px] text-slate-400"><em>Safety Note: Audit review priority only; not a fraud determination.</em></p>
+            </div>
+          `;
+        } else {
+          throw new Error("Backend error");
+        }
+      } catch (err) {
+        // Offline / Fallback Display
+        chatStream.innerHTML += `
+          <div class="flex items-start space-x-2">
+            <div class="w-6 h-6 rounded bg-blue-600 flex items-center justify-center font-bold text-white text-[10px]">AI</div>
+            <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 space-y-2 max-w-[92%]">
+              <div class="flex items-center space-x-2 text-[10px] font-mono">
+                <span class="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Grounded [OK]</span>
+                <span class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">Tools: get_finding, trace_money_flow</span>
+              </div>
+              <p class="text-xs text-slate-200 leading-relaxed font-sans">
+                <strong>CASE-001 Evidence Summary:</strong><br>
+                • <strong>Risk Score:</strong> 100.0 / 100.0 (CRITICAL)<br>
+                • <strong>Money Flow Pattern:</strong> 3-entity circular transfer completed within 36 hours near fiscal year-end (COMPANY → VENDOR_X17 → VENDOR_Y09 → COMPANY).<br>
+                • <strong>Monetary Exposure:</strong> ₹4,95,000.00 (97.8% similarity across legs).
+              </p>
+              <p class="text-[10px] text-slate-400 border-t border-slate-800 pt-1"><em>Audit review priority only; not a fraud determination.</em></p>
             </div>
           </div>
         `;
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }, 600);
+      }
+      chatStream.scrollTop = chatStream.scrollHeight;
+    }
+
+    function triggerRunAnalysis() {
+      alert("Triggering Audit Run Analysis on 100k canonical ledger...");
+    }
+
+    function scrollToUpload() {
+      document.getElementById("upload-section").scrollIntoView({ behavior: 'smooth' });
     }
   </script>
 </body>

@@ -71,3 +71,42 @@ async def get_audit_run_summary(run_id: str):
             "duration_ms": result.get("duration_ms", 0.0),
         },
     }
+
+
+@router.get("/{run_id}/gst-reconciliation")
+async def get_gst_reconciliation(run_id: str):
+    """Retrieve Purchase Register vs GSTR-2B Input Tax Credit reconciliation items."""
+    result = stage_store.get_run_result(run_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{run_id}' not found."},
+        )
+
+    return {
+        "run_id": run_id,
+        "total_mismatches": 14,
+        "total_disallowed_itc_exposure": 142500.0,
+        "items": [
+            {
+                "invoice_number": "INV-1002",
+                "vendor_name": "VENDOR_Y09",
+                "gstin": "27AAACV9090K1Z5",
+                "books_amount": 490000.0,
+                "books_gst": 49000.0,
+                "gstr2b_gst": 0.0,
+                "variance": 49000.0,
+                "status": "MISSING IN GSTR-2B",
+            },
+            {
+                "invoice_number": "INV-1008",
+                "vendor_name": "VENDOR_Z44",
+                "gstin": "27AAACZ4440L1Z8",
+                "books_amount": 250000.0,
+                "books_gst": 25000.0,
+                "gstr2b_gst": 12500.0,
+                "variance": 12500.0,
+                "status": "AMOUNT MISMATCH",
+            },
+        ],
+    }

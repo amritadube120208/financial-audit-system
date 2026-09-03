@@ -1,3 +1,4 @@
+import os
 import time
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
@@ -11,6 +12,38 @@ router = APIRouter(prefix="/copilot", tags=["copilot"])
 
 class CreateSessionRequest(BaseModel):
     run_id: str
+
+
+@router.get("/provider-health")
+async def get_copilot_provider_health():
+    """Retrieve safe metadata on active Copilot LLM providers and fallbacks."""
+    gemini_avail = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    groq_avail = bool(os.environ.get("GROQ_API_KEY", "").strip())
+    openrouter_avail = bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
+    openai_avail = bool(os.environ.get("OPENAI_API_KEY", "").strip())
+
+    if gemini_avail:
+        active = "gemini"
+    elif groq_avail:
+        active = "groq"
+    elif openrouter_avail:
+        active = "openrouter"
+    elif openai_avail:
+        active = "openai"
+    else:
+        active = "deterministic_fallback"
+
+    return {
+        "active_provider": active,
+        "status": "available",
+        "providers": {
+            "gemini": "configured" if gemini_avail else "not_configured",
+            "groq": "configured" if groq_avail else "not_configured",
+            "openrouter": "configured" if openrouter_avail else "not_configured",
+            "openai": "configured" if openai_avail else "not_configured",
+            "deterministic_fallback": "available",
+        },
+    }
 
 
 @router.post("/sessions", status_code=status.HTTP_201_CREATED)

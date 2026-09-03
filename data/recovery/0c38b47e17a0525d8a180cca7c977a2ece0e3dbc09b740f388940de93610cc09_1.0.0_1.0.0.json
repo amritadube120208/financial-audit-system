@@ -3,7 +3,7 @@
   "pipeline_version": "1.0.0",
   "scoring_config_version": "1.0.0",
   "result_data": {
-    "run_id": "run_1788440398172",
+    "run_id": "run_1788441624347",
     "status": "READY",
     "analysis_mode": "full",
     "degraded_reasons": [],
@@ -17,7 +17,7 @@
     "cases": [
       {
         "case_id": "case_inv_001",
-        "run_id": "run_1788440398172",
+        "run_id": "run_1788441624347",
         "title": "Year-End Expense Spike & Cutoff Anomaly",
         "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 99.0 (CRITICAL). Monetary Exposure: \u20b9495,000.00.",
         "risk_score": 99.0,
@@ -60,11 +60,11 @@
         "graph_payload": null,
         "monetary_exposure": 495000.0,
         "confidence": 0.65,
-        "created_at": "2026-09-03T12:59:58.177486"
+        "created_at": "2026-09-03T13:20:24.351218"
       },
       {
         "case_id": "case_inv_002",
-        "run_id": "run_1788440398172",
+        "run_id": "run_1788441624347",
         "title": "Year-End Expense Spike & Cutoff Anomaly",
         "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 98.0 (CRITICAL). Monetary Exposure: \u20b9490,000.00.",
         "risk_score": 98.0,
@@ -107,11 +107,11 @@
         "graph_payload": null,
         "monetary_exposure": 490000.0,
         "confidence": 0.65,
-        "created_at": "2026-09-03T12:59:58.177486"
+        "created_at": "2026-09-03T13:20:24.352222"
       },
       {
         "case_id": "case_inv_003",
-        "run_id": "run_1788440398172",
+        "run_id": "run_1788441624347",
         "title": "Year-End Expense Spike & Cutoff Anomaly",
         "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 97.5 (CRITICAL). Monetary Exposure: \u20b9487,500.00.",
         "risk_score": 97.5,
@@ -154,13 +154,13 @@
         "graph_payload": null,
         "monetary_exposure": 487500.0,
         "confidence": 0.65,
-        "created_at": "2026-09-03T12:59:58.177486"
+        "created_at": "2026-09-03T13:20:24.352222"
       }
     ],
     "findings": [
       {
         "finding_id": "rule_spike_run_17_0001",
-        "run_id": "run_1788440398172",
+        "run_id": "run_1788441624347",
         "detector_family": "RULES",
         "detector_name": "rules",
         "anomaly_type": "PERIOD_END_POSTING",
@@ -193,11 +193,11 @@
         "metadata": {
           "days_to_fy_end": 2
         },
-        "created_at": "2026-09-03T12:59:58.173482"
+        "created_at": "2026-09-03T13:20:24.348218"
       },
       {
         "finding_id": "rule_spike_run_17_0002",
-        "run_id": "run_1788440398172",
+        "run_id": "run_1788441624347",
         "detector_family": "RULES",
         "detector_name": "rules",
         "anomaly_type": "PERIOD_END_POSTING",
@@ -230,11 +230,11 @@
         "metadata": {
           "days_to_fy_end": 1
         },
-        "created_at": "2026-09-03T12:59:58.174493"
+        "created_at": "2026-09-03T13:20:24.348218"
       },
       {
         "finding_id": "rule_spike_run_17_0003",
-        "run_id": "run_1788440398172",
+        "run_id": "run_1788441624347",
         "detector_family": "RULES",
         "detector_name": "rules",
         "anomaly_type": "PERIOD_END_POSTING",
@@ -267,9 +267,9 @@
         "metadata": {
           "days_to_fy_end": 1
         },
-        "created_at": "2026-09-03T12:59:58.174493"
+        "created_at": "2026-09-03T13:20:24.348218"
       }
     ],
-    "created_at": "2026-09-03T12:59:58.177486"
+    "created_at": "2026-09-03T13:20:24.352222"
   }
 }
