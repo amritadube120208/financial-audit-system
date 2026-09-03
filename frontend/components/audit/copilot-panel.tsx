@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Bot, User, Sparkles, AlertCircle, CheckCircle2, ChevronRight, X, ShieldAlert } from "lucide-react";
+import { Send, Bot, User, Sparkles, X } from "lucide-react";
 import { createCopilotSession, sendCopilotMessage, getApiErrorCode, getErrorMessage } from "@/lib/api";
 import type { CopilotMessage, FindingItem } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
@@ -22,7 +22,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNew
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const canSend = Boolean(runId && sessionId) && !isLoading && !isConnecting;
+  const canSend = (!runId || Boolean(sessionId)) && !isLoading && !isConnecting;
   const explainError = (err: unknown) => getApiErrorCode(err) === "RUN_NOT_FOUND"
     ? "This audit is no longer available. Upload and analyze your ledger again to continue."
     : getErrorMessage(err);
@@ -33,8 +33,6 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNew
     let mounted = true;
     async function init() {
       if (!runId?.trim()) {
-        setSessionId(null);
-        setMessages([]);
         return;
       }
 
@@ -85,7 +83,21 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNew
 
   const handleSend = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
-    if (!query || !sessionId || isLoading) return;
+    if (!query || !canSend) return;
+    if (!runId) {
+      const id = crypto.randomUUID();
+      const greeting = /^(hi|hello|hey|good morning|good evening)[!. ]*$/i.test(query);
+      const answer = greeting
+        ? "Hi! I can help you get started with AuditGraph. Upload a CSV or Excel ledger, then click ANALYZE LEDGER. Once analysis finishes, I can explain the findings and trace transactions using your audit data."
+        : "No ledger is loaded yet, so I cannot inspect transactions or give findings for your business. Click Upload a ledger, select a CSV or Excel file, then click ANALYZE LEDGER. After analysis, ask about a finding, money flows, risk scores, or next verification steps.";
+      setMessages((prev) => [...prev,
+        { message_id: `setup_user_${id}`, session_id: "", run_id: "", role: "user", content: query },
+        { message_id: `setup_reply_${id}`, session_id: "", run_id: "", role: "assistant", answer, grounded: false },
+      ]);
+      setInput("");
+      return;
+    }
+    if (!sessionId) return;
 
     setInput("");
     setErrorMessage(null);
@@ -138,11 +150,11 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNew
               </span>
               <span className="text-[#E8913C] font-bold">.</span>
               <span className="text-[10px] font-mono uppercase tracking-[0.14em] text-[#2E6B72] px-1.5 py-0.2 bg-[#2E6B72]/10 border border-[#2E6B72]/30 rounded-sm">
-                GROUNDED
+                {runId ? "GROUNDED" : "GETTING STARTED"}
               </span>
             </div>
             <span className="font-mono text-[10px] text-[#6C7378] block">
-              {messages.some(m => m.mode === "llm_grounded") ? "AI MODE" : "EVIDENCE MODE"} {"//"} AUDIT PROVENANCE ENGINE
+              {!runId ? "SETUP HELP" : messages.some(m => m.mode === "llm_grounded") ? "AI MODE" : "EVIDENCE MODE"} {"//"} AUDIT PROVENANCE ENGINE
             </span>
           </div>
         </div>
@@ -177,7 +189,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNew
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
         {!runId && <div className="text-[#EDE7DC] space-y-3">
-          <p>Upload a ledger and start analysis to ask Copilot about your audit.</p>
+          <p>Chat here for setup help. Upload a ledger and start analysis to ask Copilot about your audit.</p>
           <button onClick={onStartNewAudit} className="text-[#E8913C] underline">Upload a ledger</button>
         </div>}
         {isConnecting && <p role="status" className="text-[#9EA5A8]">Connecting to your audit...</p>}
@@ -296,8 +308,9 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNew
       <div className="p-3 border-t border-[rgba(237,231,220,0.1)] bg-[#0A0C0E] flex items-center gap-2">
         <input
           type="text"
-          disabled={!sessionId || isConnecting}
-          placeholder={runId ? "Ask Copilot about findings, rules, or entities..." : "Upload and analyze a ledger first"}
+          aria-label="Message Copilot"
+          disabled={Boolean(runId) && (!sessionId || isConnecting)}
+          placeholder={runId ? "Ask Copilot about findings, rules, or entities..." : "Say hi or ask how to start an audit..."}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}

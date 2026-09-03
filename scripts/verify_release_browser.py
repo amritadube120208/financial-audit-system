@@ -22,6 +22,9 @@ async def main(passes):
             await page.get_by_role('button', name='COPILOT', exact=True).click()
             await expect(page.get_by_text('Upload a ledger and start analysis', exact=False)).to_be_visible()
             await expect(page.get_by_role('button', name='Send message', exact=True)).to_be_disabled()
+            await page.get_by_label('Message Copilot', exact=True).fill('hi')
+            await page.get_by_role('button', name='Send message', exact=True).click()
+            await expect(page.get_by_text('Hi! I can help you get started', exact=False)).to_be_visible()
             await page.get_by_title('Close Copilot Drawer').click()
             async with page.expect_response(lambda r: r.request.method == 'POST' and '/api/v1/datasets' in r.url) as up:
                 await page.locator('#file-upload').set_input_files(root / 'AuditGraph_Demo_SME_Ledger.xlsx')

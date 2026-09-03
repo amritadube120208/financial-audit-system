@@ -27,7 +27,7 @@ The browser uses same-origin API requests. Set **BACKEND_URL** during the fronte
 - `main` and `backend`: complete application; backend build context is repository root, frontend build context is `frontend/`.
 - `frontend`: standalone frontend; build context is repository root. Set `BACKEND_URL` to the deployed backend origin before building.
 
-Copilot requires an analyzed ledger. The active run is retained in the audit URL across refreshes; an expired session is renewed automatically. After a backend restart, upload and analyze the ledger again.
+Copilot answers setup questions before an upload. Questions about your transactions and findings require an analyzed ledger. The active run is retained in the audit URL across refreshes; an expired session is renewed automatically. After a backend restart, upload and analyze the ledger again.
 
 ## Deployment
 

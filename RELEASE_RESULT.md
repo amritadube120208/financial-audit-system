@@ -40,3 +40,5 @@ See README.md for the installation and deployment commands. The final commit SHA
 ## Copilot deployment follow-up
 
 Fixed disabled/connecting states, actionable missing-audit errors, one-time missing-session recovery, and active run URL retention across refresh. Copilot integration tests: 16 passed. Next production build: passed. Browser upload, refresh, Copilot reply, report, export and run isolation: passed with zero critical errors.
+
+Copilot setup follow-up: confirmed the existing browser tab had old JavaScript and no active audit. Added explicitly labeled setup help, allowing Send and Enter before upload without inventing ledger findings. Production build passed; verified greeting and setup replies in the user tab and a typed audit question receiving grounded evidence in a separate test tab.
