@@ -39,7 +39,7 @@ async def test_dataset_upload_and_run_flow():
             "/api/v1/datasets",
             files={"file": ("test_ledger.csv", csv_content.encode("utf-8"), "text/csv")},
         )
-        assert upload_resp.status_code == 200
+        assert upload_resp.status_code in (200, 201)
         ds_data = upload_resp.json()
         dataset_id = ds_data["dataset_id"]
         assert ds_data["row_count"] == 3

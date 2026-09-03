@@ -40,7 +40,7 @@ def build_investigation_cases(
         if risk_score < 45.0 and len(cluster.findings) == 1 and cluster.findings[0].detector_family == DetectorFamily.ANOMALY:
             continue
 
-        case_id = f"case_inv_{idx+1:03d}"
+        case_id = f"case_{run_id}_{idx+1:03d}"
 
         # Consolidate evidence items
         consolidated_evidence: list[EvidenceItem] = []
@@ -62,19 +62,37 @@ def build_investigation_cases(
                 graph_payload = f.metadata["graph_payload"]
                 break
 
-        # Construct primary case title
-        primary_anomaly = anomaly_types[0] if anomaly_types else "ANOMALY"
-        if "ROUND_TRIP" in anomaly_types:
-            title = "Circular Financial Flow & Year-End Reversal"
-            risk_score = 92.1
-            severity = Severity.CRITICAL
-        elif "EXACT_DUPLICATE" in anomaly_types or "NEAR_DUPLICATE" in anomaly_types:
-            title = "Duplicate Invoice / Payment Pattern"
-        elif "PERIOD_END_POSTING" in anomaly_types:
-            title = "Year-End Expense Spike & Cutoff Anomaly"
+        # Construct dynamic case title from actual case evidence
+        entity_count = len(cluster.entity_ids)
+        primary_entity = cluster.entity_ids[0] if cluster.entity_ids else "Ledger"
+
+        if "ROUND_TRIP" in anomaly_types or "GRAPH_CYCLE" in anomaly_types:
+            hops = len(graph_payload.get("nodes", [])) if isinstance(graph_payload, dict) else entity_count
+            title = f"Circular Money Flow Across {hops} Entities"
+        elif "EXACT_DUPLICATE" in anomaly_types:
+            title = f"Duplicate Voucher / Payment Pattern ({primary_entity})"
+        elif "NEAR_DUPLICATE" in anomaly_types:
+            title = f"Near-Duplicate Invoice Amount Pattern ({primary_entity})"
+        elif "BACKDATED_POSTING" in anomaly_types:
+            delay = next((ev.value for ev in consolidated_evidence if ev.key == "posting_delay_days"), None)
+            delay_str = f"{delay}-Day " if delay else ""
+            title = f"{delay_str}Delayed Manual Posting ({primary_entity})"
         elif "GST_MISMATCH" in anomaly_types:
-            title = "GSTR-2B Input Tax Credit Mismatch"
+            title = f"Ledger-Reported GST Mismatch ({primary_entity})"
+        elif "PERIOD_END_POSTING" in anomaly_types:
+            title = "Fiscal Year-End Manual Adjustment"
+        elif "RAPID_REVERSAL" in anomaly_types:
+            title = f"Rapid Transaction Reversal ({primary_entity})"
+        elif "RARE_COUNTERPARTY" in anomaly_types:
+            title = f"High-Value Rare Counterparty Transaction ({primary_entity})"
+        elif "HIGH_VALUE_OUTLIER" in anomaly_types:
+            title = f"Material High-Value Outlier ({primary_entity})"
+        elif "STATISTICAL_OUTLIER" in anomaly_types or "ISOLATION_FOREST_OUTLIER" in anomaly_types or "ML_OUTLIER" in anomaly_types:
+            title = f"Unsupervised ML Statistical Anomaly ({primary_entity})"
+        elif "ROUND_AMOUNT" in anomaly_types:
+            title = f"Suspicious Round-Amount Transaction Split ({primary_entity})"
         else:
+            primary_anomaly = anomaly_types[0] if anomaly_types else "ANOMALY"
             title = f"Multi-Engine Financial Anomaly ({primary_anomaly})"
 
         # Construct human-readable summary
@@ -112,10 +130,10 @@ def build_investigation_cases(
         cases.append(inv_case)
 
     # Sort cases prioritizing Circular Flow hero case then risk score descending
-    cases.sort(key=lambda c: (1 if "ROUND_TRIP" in c.anomaly_types or "Circular" in c.title else 0, c.risk_score), reverse=True)
+    cases.sort(key=lambda c: c.risk_score, reverse=True)
 
     # Re-assign ranked case IDs
     for rank_idx, c in enumerate(cases):
-        c.case_id = f"case_inv_{rank_idx+1:03d}"
+        c.case_id = f"case_{run_id}_{rank_idx+1:03d}"
 
     return cases

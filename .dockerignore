@@ -1,0 +1,11 @@
+.git
+.env*
+.venv
+**/node_modules
+**/.next
+.release
+frontend-editorial
+apps
+data
+*.db
+**/__pycache__

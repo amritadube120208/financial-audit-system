@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./auditgraph.db"
     REDIS_URL: str = "redis://localhost:6379/0"
 
-    PIPELINE_VERSION: str = "1.0.0"
+    PIPELINE_VERSION: str = "1.1.0"
     SCORING_CONFIG_VERSION: str = "1.0.0"
     DETECTOR_CONFIG_VERSION: str = "1.0.0"
 

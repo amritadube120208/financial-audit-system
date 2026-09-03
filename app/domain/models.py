@@ -12,12 +12,12 @@ class CanonicalTransaction(BaseModel):
     transaction_id: str
     dataset_id: str = "default_ds"
 
-    posting_date: date
+    posting_date: date | None = None
     document_date: date | None = None
 
-    fiscal_year: str = "FY26"
-    month: int = 3
-    day_of_month: int = 31
+    fiscal_year: str | None = None
+    month: int | None = None
+    day_of_month: int | None = None
 
     invoice_number: str | None = None
     reference_number: str | None = None
@@ -120,6 +120,8 @@ class DatasetRef(BaseModel):
     size_bytes: int
     row_count: int
     column_count: int
+    detected_format: str = "csv"
+    schema_status: str = "MAPPED"
     canonical_mapping: dict[str, str] = Field(default_factory=dict)
     warnings: list[str] = Field(default_factory=list)
     created_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())

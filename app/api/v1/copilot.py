@@ -1,4 +1,5 @@
 import time
+import uuid
 import logging
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
@@ -58,7 +59,7 @@ async def create_copilot_session(request: CreateSessionRequest):
             detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{request.run_id}' not found."},
         )
 
-    session_id = f"cop_{int(time.time()*1000)}"
+    session_id = f"cop_{uuid.uuid4().hex}"
 
     # 1. Durable SQLite Database Persistence
     await copilot_repo.create_session(session_id, request.run_id)

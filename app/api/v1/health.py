@@ -6,6 +6,7 @@ import ctypes
 from ctypes import wintypes
 from datetime import datetime, timezone
 from fastapi import APIRouter
+from sqlalchemy import text
 from app.config import settings
 from app.persistence.store import stage_store
 from app.persistence.database import engine
@@ -58,11 +59,15 @@ async def healthz():
     active_runs = len(stage_store._runs)
     loaded_datasets = len(stage_store._datasets)
 
+    from app.ml.registry import model_registry
+    ml_status = model_registry.get_status()
+
     return {
         "status": "ok",
         "service": "auditgraph",
         "version": settings.PIPELINE_VERSION,
         "timestamp": datetime.now(timezone.utc).isoformat(),
+        "ml": ml_status,
         "telemetry": {
             "uptime_seconds": uptime_seconds,
             "memory_resident_mb": memory_mb,
@@ -70,6 +75,12 @@ async def healthz():
             "platform": platform.platform(),
             "active_runs_in_memory": active_runs,
             "loaded_datasets_count": loaded_datasets,
+            "ml_model": ml_status["ml_model"],
+            "model_name": ml_status["model_name"],
+            "model_version": ml_status["model_version"],
+            "feature_schema_version": ml_status["feature_schema_version"],
+            "inference": ml_status["inference"],
+            "training": ml_status["training"],
         },
     }
 
@@ -80,26 +91,36 @@ async def readyz():
     db_status = "operational"
     try:
         async with engine.connect() as conn:
-            await conn.execute(conn.sync_engine.dialect.statement_compiler(conn.sync_engine.dialect, None).string_or_blank if False else "SELECT 1")
+            await conn.execute(text("SELECT 1"))
     except Exception:
-        db_status = "sqlite_connected"
+        db_status = "unavailable"
+
+    from app.ml.registry import model_registry
+    ml_status = model_registry.get_status()
 
     # Real engine module availability check
     engines_status = {
         "rules_engine": True,
-        "isolation_forest": True,
+        "isolation_forest": model_registry.is_ready(),
         "graph_cycles": True,
         "gst_reconciliation": True,
     }
 
     return {
-        "ready": True,
-        "status": "ready",
+        "ready": db_status == "operational",
+        "status": "ready" if db_status == "operational" else "unhealthy",
+        "components": {
+            "database": "ready" if db_status == "operational" else "unavailable",
+            "analysis_engine": "ready" if model_registry.is_ready() else "degraded",
+            "llm": "configured" if settings.GROQ_API_KEY and not settings.DISABLE_LLM else "optional_offline",
+            "recovery_store": "available" if os.path.isdir(settings.RECOVERY_DIR) else "unavailable",
+        },
         "service": "auditgraph",
         "pipeline_version": settings.PIPELINE_VERSION,
         "database": db_status,
         "cache": "operational_in_memory",
         "engines": engines_status,
+        "ml": ml_status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -112,11 +133,11 @@ async def version():
         "pipeline_version": settings.PIPELINE_VERSION,
         "scoring_config_version": settings.SCORING_CONFIG_VERSION,
         "detector_config_version": settings.DETECTOR_CONFIG_VERSION,
-        "git_commit": "e7b4f91",
+        "git_commit": os.getenv("GIT_COMMIT"),
         "engines": {
-            "rules_engine": "v2.4.1",
-            "isolation_forest": "v1.2.0",
-            "graph_cycles": "v3.1.0",
-            "gst_reconciliation": "v1.0.4",
+            "rules_engine": settings.DETECTOR_CONFIG_VERSION,
+            "isolation_forest": settings.DETECTOR_CONFIG_VERSION,
+            "graph_cycles": settings.DETECTOR_CONFIG_VERSION,
+            "gst_reconciliation": settings.DETECTOR_CONFIG_VERSION,
         },
     }

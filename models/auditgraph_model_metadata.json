@@ -1,0 +1,78 @@
+{
+  "model_name": "auditgraph_isolation_forest",
+  "model_type": "IsolationForest",
+  "model_version": "1.1.0",
+  "feature_schema_version": "1.0.0",
+  "training_timestamp": "2026-09-03T22:28:05.686644+00:00",
+  "training_dataset_hash": "00340ecadc0190ececda95430e6c663f00a4fc0d9ca019af280a094dd43599ab",
+  "corpus_hash": "42dabac69b893a9646078c553eebbcbbd96a3fbecba4e35d1166f105e0cb6c0a",
+  "training_rows": 4025,
+  "validation_rows": 839,
+  "test_rows": 1212,
+  "feature_names": [
+    "log_abs_amount",
+    "amount_rel_median",
+    "robust_amount_z",
+    "vendor_freq",
+    "vendor_amt_dev",
+    "doc_posting_gap",
+    "posting_day",
+    "posting_month",
+    "period_end_proximity",
+    "is_manual_entry",
+    "roundness_score",
+    "gst_ratio"
+  ],
+  "feature_count": 12,
+  "threshold": 0.54,
+  "model_threshold": 0.54,
+  "random_seed": 42,
+  "sklearn_version": "1.9.0",
+  "training_mode": "OFFLINE",
+  "split": {
+    "unit": "company",
+    "train": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "validation": [
+      12,
+      13,
+      14
+    ],
+    "test": [
+      15,
+      16,
+      17
+    ]
+  },
+  "validation_metrics": {
+    "precision": 0.967741935483871,
+    "recall": 1.0,
+    "f1": 0.9836065573770492,
+    "pr_auc": 0.9942391506926174,
+    "precision_at_10": 1.0,
+    "precision_at_25": 1.0,
+    "precision_at_50": 0.6
+  },
+  "test_metrics": {
+    "precision": 0.9772727272727273,
+    "recall": 1.0,
+    "f1": 0.9885057471264368,
+    "pr_auc": 1.0000000000000002,
+    "precision_at_10": 1.0,
+    "precision_at_25": 1.0,
+    "precision_at_50": 0.86
+  },
+  "limitations": "Synthetic high-value/delayed-posting labels only; metrics do not estimate real-world fraud accuracy. Showcase workbook excluded."
+}

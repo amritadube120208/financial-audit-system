@@ -25,3 +25,13 @@ apps/web/node_modules/
 .next/
 apps/web/.next/
 _backup_backend/
+.release/
+frontend-editorial/
+*.tsbuildinfo
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+data/recovery/
+data/AuditGraph_Demo_SME_Ledger.xlsx
+*.log

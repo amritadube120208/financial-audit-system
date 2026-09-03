@@ -34,7 +34,7 @@ interface AuditCopilotSheetProps {
 
 export const AuditCopilotSheet: React.FC<AuditCopilotSheetProps> = ({ runId: propRunId }) => {
   const params = useParams();
-  const runId = propRunId || (params?.runId as string) || "run-demo-sme-2026";
+  const runId = propRunId || (params?.runId as string) || "";
   const { isCopilotOpen, setIsCopilotOpen, selectedFindingId, setSelectedFindingId } = useUiStore();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputQuery, setInputQuery] = useState("");

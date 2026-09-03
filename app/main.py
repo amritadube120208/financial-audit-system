@@ -18,6 +18,8 @@ from app.api.v1.health import router as health_router
 async def lifespan(app: FastAPI):
     # Lifecycle startup
     await init_db()
+    from app.ml.registry import model_registry
+    model_registry.load_default_model()
     yield
     # Lifecycle shutdown
 
@@ -69,13 +71,10 @@ async def auditgraph_exception_handler(request: Request, exc: AuditGraphExceptio
     )
 
 
-# Serve root index HTML demo page
+# The production interface is served by the Next.js frontend.
 @app.get("/", include_in_schema=False)
-async def serve_demo_frontend():
-    static_html = os.path.join(os.path.dirname(__file__), "static", "index.html")
-    if os.path.exists(static_html):
-        return FileResponse(static_html)
-    return JSONResponse({"message": "AuditGraph API Running"})
+async def api_index():
+    return JSONResponse({"message": "AuditGraph API Running", "docs": "/docs"})
 
 
 # Mount health endpoints at root level (/healthz, /readyz)

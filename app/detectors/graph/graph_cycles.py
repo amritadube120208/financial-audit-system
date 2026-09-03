@@ -55,12 +55,22 @@ class GraphCycleDetector(BaseDetector):
 
         # Add nodes and edges
         for t in material_txns:
-            # Determine source/target entities
-            raw_src = t.debit_account or "COMPANY_MAIN_SELF"
-            raw_dst = t.counterparty_name or t.credit_account or t.entity_id or "UNKNOWN_VENDOR"
+            if t.posting_date is None:
+                continue
+            # Determine source/target entities based on double-entry money-flow:
+            # Credit account releases funds (source), Debit account receives funds (destination)
+            if t.credit_account and t.debit_account and t.credit_account != t.debit_account:
+                raw_src = t.credit_account
+                raw_dst = t.debit_account
+            elif t.credit_account and t.counterparty_name and t.credit_account != t.counterparty_name:
+                raw_src = t.credit_account
+                raw_dst = t.counterparty_name
+            else:
+                raw_src = t.credit_account or "COMPANY_MAIN_SELF"
+                raw_dst = t.counterparty_name or t.debit_account or "UNKNOWN_VENDOR"
 
-            src = _normalize_node_name(raw_src, is_debit=True)
-            dst = _normalize_node_name(raw_dst, is_debit=False)
+            src = _normalize_node_name(raw_src, is_debit=False)
+            dst = _normalize_node_name(raw_dst, is_debit=True)
 
             # Skip self-loops
             if src == dst:
@@ -86,7 +96,7 @@ class GraphCycleDetector(BaseDetector):
 
         # Find simple cycles up to 4 hops
         try:
-            cycles = [c for c in nx.simple_cycles(G) if 2 <= len(c) <= 4]
+            cycles = [c for c in nx.simple_cycles(G, length_bound=4) if 2 <= len(c) <= 4]
         except Exception:
             return []
 

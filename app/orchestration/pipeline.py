@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Any, Callable
 
 from app.config import settings
+from app.ml.registry import model_registry
 from app.domain.enums import RunState, DetectorFamily, AnalysisMode
 from app.domain.models import CanonicalTransaction, DetectorFinding, InvestigationCase
 from app.ingest.loader import load_dataset
@@ -45,6 +46,14 @@ event_bus = EventBus()
 
 
 class PipelineOrchestrator:
+    @staticmethod
+    def _scope_recovered_cases(snapshot: dict[str, Any], run_id: str):
+        for index, case in enumerate(snapshot.get("cases", []), 1):
+            case["case_id"] = f"case_{run_id}_{index:03d}"
+            case["run_id"] = run_id
+        for finding in snapshot.get("findings", []):
+            finding["run_id"] = run_id
+
     async def run_pipeline(
         self,
         run_id: str,
@@ -66,6 +75,7 @@ class PipelineOrchestrator:
                 scoring_config_version=settings.SCORING_CONFIG_VERSION,
             )
             if snapshot:
+                self._scope_recovered_cases(snapshot, run_id)
                 snapshot["run_id"] = run_id
                 snapshot["analysis_mode"] = "recovered"
                 snapshot["status"] = RunState.READY.value
@@ -93,6 +103,7 @@ class PipelineOrchestrator:
                 scoring_config_version=settings.SCORING_CONFIG_VERSION,
             )
             if snapshot:
+                self._scope_recovered_cases(snapshot, run_id)
                 snapshot["run_id"] = run_id
                 snapshot["analysis_mode"] = "recovered"
                 snapshot["status"] = RunState.READY.value
@@ -125,9 +136,9 @@ class PipelineOrchestrator:
             degraded_reasons.append(f"RULES_ENGINE_FAILURE: {str(exc)}")
 
         # 2. IsolationForest ML Engine Execution
-        if settings.DEMO_FAIL_ML == 1:
+        if settings.DEMO_FAIL_ML == 1 or not model_registry.is_ready():
             ml_findings = []
-            degraded_reasons.append("DEMO_FAIL_ML switch active")
+            degraded_reasons.append("DEMO_FAIL_ML switch active" if settings.DEMO_FAIL_ML else "ML MODEL UNAVAILABLE")
             active_families.remove(DetectorFamily.ANOMALY)
         else:
             ml_detector = IsolationForestDetector()
@@ -193,6 +204,7 @@ class PipelineOrchestrator:
             "degraded_reasons": degraded_reasons,
             "transactions_analyzed": len(transactions),
             "total_raw_flags": len(all_findings),
+            "ml_model": model_registry.get_status(),
             "total_cases": total_cases,
             "critical_cases": crit_cases,
             "high_cases": high_cases,

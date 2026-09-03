@@ -130,6 +130,8 @@ class RulesDetector(BaseDetector):
                     t1, t2 = group[i], group[j]
 
                     # Check date proximity <= 5 days
+                    if not t1.posting_date or not t2.posting_date:
+                        continue
                     days_diff = abs((t1.posting_date - t2.posting_date).days)
                     if days_diff > 5:
                         continue
@@ -271,6 +273,8 @@ class RulesDetector(BaseDetector):
         # Look for transactions within 3 days of March 31 (FY end) or month end with high material amount
         for t in txns:
             p_dt = t.posting_date
+            if p_dt is None:
+                continue
             # Check if within last 3 days of March (FY end in India context: March 29..31)
             is_fy_end = (p_dt.month == 3 and p_dt.day >= 28)
             is_manual = t.is_manual_entry
@@ -376,7 +380,7 @@ class RulesDetector(BaseDetector):
         count = 0
 
         # Sort transactions by date/time
-        sorted_txns = sorted(txns, key=lambda x: x.posting_date)
+        sorted_txns = sorted((t for t in txns if t.posting_date), key=lambda x: x.posting_date)
 
         for i in range(len(sorted_txns)):
             t1 = sorted_txns[i]
@@ -583,21 +587,33 @@ class RulesDetector(BaseDetector):
         gst_records = context.get("gst_records", {})
 
         for t in txns:
-            # Check if transaction has explicit GST flag or context mismatch
+            is_gst_flagged = False
+            reason = ""
+
             if t.narration and "GST_MISMATCH" in t.narration.upper():
+                is_gst_flagged = True
+                reason = "Purchase register entry flagged with GST reconciliation variance in narration"
+
+            if is_gst_flagged:
                 count += 1
                 raw_s = 0.90
                 evidence = [
                     EvidenceItem(
                         key="gst_mismatch_type",
-                        label="GST Reconciliation Mismatch",
-                        value="Purchase register entry absent from GSTR-2B snapshot",
+                        label="GST Reconciliation Finding",
+                        value=reason,
                         source=EvidenceSource.GST,
                     ),
                     EvidenceItem(
                         key="invoice_number",
                         label="Invoice Number",
                         value=t.invoice_number or "N/A",
+                        source=EvidenceSource.LEDGER,
+                    ),
+                    EvidenceItem(
+                        key="recorded_gst_amount",
+                        label="Recorded GST Amount",
+                        value=f"₹{t.gst_amount:,.2f}" if t.gst_amount is not None else "N/A",
                         source=EvidenceSource.LEDGER,
                     ),
                 ]

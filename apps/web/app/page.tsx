@@ -17,12 +17,12 @@ export default function HomePage() {
     queryFn: listAuditRuns,
   });
 
-  // Pick the latest available run ID
-  const latestRunId = runs.length > 0 ? runs[runs.length - 1].run_id : "run_demo_100k";
+  // Pick the latest available run ID (no fake demo run)
+  const latestRunId = runs.length > 0 ? runs[runs.length - 1].run_id : null;
 
   const { data: summary, isLoading: isLoadingSummary } = useQuery({
     queryKey: ["audit-summary", latestRunId],
-    queryFn: () => getAuditSummary(latestRunId),
+    queryFn: () => (latestRunId ? getAuditSummary(latestRunId) : null),
     enabled: Boolean(latestRunId),
   });
 

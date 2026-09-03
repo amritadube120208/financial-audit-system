@@ -1,5 +1,7 @@
 import asyncio
 import time
+import uuid
+import json
 from typing import Any
 from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
@@ -20,7 +22,6 @@ class CreateAuditRunRequest(BaseModel):
 @router.get("/", status_code=status.HTTP_200_OK)
 async def list_audit_runs():
     """List all available audit runs in database / stage store."""
-    stage_store._seed_demo_if_empty()
     runs = []
     for run_id, res in stage_store._runs.items():
         runs.append({
@@ -48,13 +49,20 @@ async def create_audit_run(request: CreateAuditRunRequest):
         )
 
     transactions = stage_store.get_transactions_for_dataset(request.dataset_id)
-    run_id = f"run_{int(time.time()*1000)}"
+    run_id = f"run_{uuid.uuid4().hex}"
 
     result = await pipeline_orchestrator.run_pipeline(
         run_id=run_id,
         dataset_sha256=dataset_ref.sha256,
         transactions=transactions,
     )
+
+    result["dataset_id"] = request.dataset_id
+    result["total_value_inr"] = sum(float(abs(t.amount)) for t in transactions)
+    flagged = {tid for case in result.get("cases", []) for tid in case.get("transaction_ids", [])}
+    result["unique_flagged_transactions"] = len(flagged)
+    result["total_exposure"] = sum(float(abs(t.amount)) for t in transactions if t.transaction_id in flagged)
+    stage_store.save_run_result(run_id, result)
 
     return result
 
@@ -80,22 +88,54 @@ async def get_audit_run_summary(run_id: str):
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{run_id}' not found."},
         )
+
+    cases = result.get("cases", [])
+    total_exp = result.get("total_exposure") or sum(float(c.get("monetary_exposure", 0)) for c in cases)
+    total_val = result.get("total_value_inr") or sum(float(c.get("monetary_exposure", 0)) for c in cases)
+
+    summary_obj = {
+        "suspicious_transactions": result.get("unique_flagged_transactions", 0),
+        "raw_detector_flags": result.get("total_raw_flags", 0),
+        "execution_duration_ms": result.get("duration_ms", 0),
+        "transactions_analyzed": result.get("transactions_analyzed", 0),
+        "total_transactions": result.get("transactions_analyzed", 0),
+        "total_cases": result.get("total_cases", len(cases)),
+        "critical_findings": result.get("critical_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "CRITICAL")),
+        "critical_cases": result.get("critical_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "CRITICAL")),
+        "high_findings": result.get("high_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "HIGH")),
+        "high_cases": result.get("high_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "HIGH")),
+        "medium_findings": result.get("medium_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "MEDIUM")),
+        "medium_cases": result.get("medium_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "MEDIUM")),
+        "low_findings": result.get("low_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "LOW")),
+        "low_cases": result.get("low_cases", sum(1 for c in cases if str(c.get("severity", "")).upper() == "LOW")),
+        "review_surface_reduction_pct": result.get("review_surface_reduction_pct", 0.0),
+        "duration_ms": result.get("duration_ms", 0.0),
+        "total_value_inr": total_val,
+        "initial_flags": result.get("total_raw_flags", 0),
+        "unique_flagged_transactions": result.get("unique_flagged_transactions", len(cases)),
+        "total_exposure": total_exp,
+        "monetary_exposure": total_exp,
+    }
+
     return {
         "run_id": run_id,
-        "summary": {
-            "transactions_analyzed": result.get("transactions_analyzed", 0),
-            "total_cases": result.get("total_cases", 0),
-            "critical_findings": result.get("critical_cases", 0),
-            "high_findings": result.get("high_cases", 0),
-            "medium_findings": result.get("medium_cases", 0),
-            "low_findings": result.get("low_cases", 0),
-            "review_surface_reduction_pct": result.get("review_surface_reduction_pct", 0.0),
-            "duration_ms": result.get("duration_ms", 0.0),
-            "total_value_inr": result.get("total_value_inr", 142850000.0),
-            "initial_flags": result.get("initial_flags", 4379),
-            "unique_flagged_transactions": result.get("unique_flagged_transactions", 2840),
-        },
+        "summary": summary_obj,
+        "metrics": summary_obj,
+        "status": result.get("status"),
+        "analysis_mode": result.get("analysis_mode"),
+        "dataset": stage_store.get_dataset(result.get("dataset_id")).model_dump() if stage_store.get_dataset(result.get("dataset_id")) else None,
+        "detectors": result.get("detectors", {}),
     }
+
+
+@router.get("/{run_id}/events")
+async def get_audit_events(run_id: str):
+    result = await get_audit_run(run_id)
+    async def events():
+        payload = {"run_id": run_id, "state": result["status"], "stage": result["status"],
+                   "progress": 100, "message": "Audit analysis complete"}
+        yield "data: " + json.dumps(payload) + "\n\n"
+    return StreamingResponse(events(), media_type="text/event-stream")
 
 
 @router.get("/{run_id}/gst-reconciliation")
@@ -109,53 +149,21 @@ async def get_gst_reconciliation(run_id: str):
             detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{run_id}' not found."},
         )
 
-    # Compute dynamic GST items from actual run cases and dataset transactions
-    cases = result.get("cases", [])
-    gst_cases = [c for c in cases if any("GST" in str(a).upper() for a in c.get("anomaly_types", []))]
-
-    items = []
-    total_discrepancy = 0.0
-    for idx, c in enumerate(gst_cases):
-        amt = float(c.get("amount", 250000.0))
-        gst_snapshot = amt * 0.5 if idx % 2 == 1 else 0.0
-        diff = amt - gst_snapshot
-        total_discrepancy += diff
-        items.append({
-            "invoice_number": f"INV-{1000 + idx * 2}",
-            "vendor_name": c.get("vendor_name", f"Vendor {idx+1}"),
-            "gstin": c.get("gstin", f"27AAACV{1000+idx}K1Z5"),
-            "books_amount": amt,
-            "gst_snapshot_amount": gst_snapshot,
-            "difference": diff,
-            "difference_pct": round((diff / amt) * 100, 1) if amt > 0 else 0.0,
-            "status": "MISSING_IN_GST" if gst_snapshot == 0 else "MISMATCHED",
-            "tax_amount": round(amt * 0.18, 2),
-        })
-
-    # If no specific GST anomalies flagged, fallback to standard matched summary
-    if not items and cases:
-        # Construct sample matched item from first transaction
-        first_case = cases[0]
-        amt = float(first_case.get("amount", 490000.0))
-        items.append({
-            "invoice_number": "INV-1002",
-            "vendor_name": first_case.get("vendor_name", "Zenith Trading & Logistics"),
-            "gstin": "27AAACV9090K1Z5",
-            "books_amount": amt,
-            "gst_snapshot_amount": amt,
-            "difference": 0.0,
-            "difference_pct": 0.0,
-            "status": "MATCHED",
-            "tax_amount": round(amt * 0.18, 2),
-        })
-
+    rows = stage_store.get_transactions_for_dataset(result.get("dataset_id"))
+    marked = [t for t in rows if t.narration and "GST_MISMATCH" in t.narration.upper()]
     return {
         "run_id": run_id,
         "enabled": True,
-        "total_matched": max(0, result.get("transactions_analyzed", 0) - len(items)),
-        "total_mismatched": len(items),
-        "total_discrepancy_inr": round(total_discrepancy, 2),
-        "items": items,
+        "reconciliation_performed": False,
+        "method": "Explicit ledger-reported GST mismatch markers only",
+        "total_matched": None,
+        "total_mismatched": len(marked),
+        "total_discrepancy_inr": None,
+        "items": [{"transaction_id": t.transaction_id, "invoice_number": t.invoice_number,
+                   "vendor_name": t.counterparty_name, "gstin": t.gstin,
+                   "books_amount": float(t.amount), "tax_amount": float(t.gst_amount) if t.gst_amount is not None else None,
+                   "gst_snapshot_amount": None, "difference": None, "difference_pct": None,
+                   "status": "LEDGER_REPORTED_MISMATCH"} for t in marked],
     }
 
 
@@ -177,7 +185,7 @@ async def get_audit_run_transactions(run_id: str, limit: int = 25, offset: int =
         txs = [
             t for t in txs
             if s_lower in str(t.transaction_id).lower()
-            or s_lower in str(t.account_id).lower()
+            or s_lower in str(t.debit_account or t.credit_account).lower()
             or s_lower in str(t.counterparty_id).lower()
             or s_lower in str(t.narration).lower()
         ]
@@ -189,4 +197,6 @@ async def get_audit_run_transactions(run_id: str, limit: int = 25, offset: int =
         "limit": limit,
         "offset": offset,
         "items": [t.model_dump() for t in sliced],
+        "transactions": [t.model_dump() for t in sliced],
+        "total_returned": len(sliced),
     }

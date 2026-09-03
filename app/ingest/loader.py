@@ -10,16 +10,18 @@ from app.ingest.schema_mapper import map_columns
 from app.ingest.validator import validate_canonical_schema
 
 
-def _parse_date(val: Any) -> date:
+def _parse_date(val: Any) -> date | None:
     if val is None or pd.isna(val):
-        return date(2026, 1, 1)
+        return None
 
-    if isinstance(val, (date, datetime)):
-        return val if isinstance(val, date) else val.date()
+    if isinstance(val, datetime):
+        return val.date()
+    if isinstance(val, date):
+        return val
 
     val_str = str(val).strip()
     if not val_str or val_str.lower() in ("none", "nan", "null"):
-        return date(2026, 1, 1)
+        return None
 
     try:
         parts = val_str.split("T")[0].split(" ")[0]
@@ -42,7 +44,7 @@ def _parse_date(val: Any) -> date:
         dt = pd.to_datetime(val_str)
         return dt.date()
     except Exception:
-        return date(2026, 1, 1)
+        return None
 
 
 def _parse_decimal(val: Any) -> Decimal:
@@ -80,7 +82,9 @@ def load_dataset(
 
     try:
         if ext in ("xlsx", "xls"):
-            df = pd.read_excel(io.BytesIO(content))
+            xl = pd.ExcelFile(io.BytesIO(content))
+            sheet = "Ledger" if "Ledger" in xl.sheet_names else 0
+            df = pd.read_excel(xl, sheet_name=sheet, dtype=str)
         else:
             df = pd.read_csv(io.BytesIO(content), dtype=str)
     except Exception as exc:
@@ -89,6 +93,7 @@ def load_dataset(
         )
 
     headers = [str(col).strip() for col in df.columns]
+    df.columns = headers
     mapping, warnings = map_columns(headers)
     validate_canonical_schema(mapping, headers)
 
@@ -124,7 +129,7 @@ def load_dataset(
 
         amount = _parse_decimal(row.get(col_amount) if col_amount else None)
         gst_val = row.get(col_gst_amt) if col_gst_amt else None
-        gst_amt = _parse_decimal(gst_val) if gst_val and not pd.isna(gst_val) else None
+        gst_amt = _parse_decimal(gst_val) if gst_val is not None and not pd.isna(gst_val) else None
 
         cp_val = row.get(col_cp) if col_cp else None
         cp_str = str(cp_val).strip() if cp_val and not pd.isna(cp_val) else None
@@ -144,7 +149,15 @@ def load_dataset(
 
         is_manual = str(man_val).strip().lower() in ("true", "1", "yes", "manual") if man_val else False
 
-        fy_str = f"FY{posting_dt.year + 1 - 2000:02d}" if posting_dt.month >= 4 else f"FY{posting_dt.year - 2000:02d}"
+        if posting_dt is None:
+            warnings.append(f"Row {source_row_num}: Invalid or missing posting date")
+            fy_str = None
+            month_val = None
+            day_val = None
+        else:
+            fy_str = f"FY{posting_dt.year + 1 - 2000:02d}" if posting_dt.month >= 4 else f"FY{posting_dt.year - 2000:02d}"
+            month_val = posting_dt.month
+            day_val = posting_dt.day
 
         txn = CanonicalTransaction(
             transaction_id=txn_id,
@@ -152,8 +165,8 @@ def load_dataset(
             posting_date=posting_dt,
             document_date=doc_dt,
             fiscal_year=fy_str,
-            month=posting_dt.month,
-            day_of_month=posting_dt.day,
+            month=month_val,
+            day_of_month=day_val,
             invoice_number=inv_str,
             reference_number=ref_str,
             entity_id=entity_str,
@@ -179,6 +192,7 @@ def load_dataset(
         size_bytes=size_bytes,
         row_count=len(transactions),
         column_count=len(headers),
+        detected_format=ext,
         canonical_mapping=mapping,
         warnings=warnings,
         created_at=datetime.utcnow().isoformat(),

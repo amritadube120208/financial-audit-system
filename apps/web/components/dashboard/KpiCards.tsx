@@ -99,8 +99,8 @@ export const KpiCards: React.FC<KpiCardsProps> = ({ summary }) => {
               </span>
             </div>
             <p className="text-sm font-semibold text-slate-100">
-              Manual triage reduced from {formatNumber(summary?.transaction_count ?? 99906)} rows to{" "}
-              {(summary?.critical ?? 46) + (summary?.high ?? 312) + (summary?.medium ?? 1240) + (summary?.low ?? 20123)} prioritized investigations.
+              Manual triage reduced from {formatNumber(summary?.transaction_count ?? 0)} rows to{" "}
+              {(summary?.critical ?? 0) + (summary?.high ?? 0) + (summary?.medium ?? 0) + (summary?.low ?? 0)} prioritized investigations.
             </p>
             <p className="text-xs text-slate-400">
               Eliminates sampling noise and allows audit teams to focus on highest-risk material variances.

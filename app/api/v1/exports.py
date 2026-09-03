@@ -1,29 +1,27 @@
-from fastapi import APIRouter, HTTPException, status
-from app.persistence.store import memory_store
+import csv
+import io
+import json
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
+from app.api.v1.reports import get_audit_report
 
-router = APIRouter(prefix="/api/v1/exports", tags=["Exports"])
+router = APIRouter(tags=["Exports"])
 
-
-@router.get("/{run_id}")
-async def export_audit_report(run_id: str):
-    """Export authoritative audit triage report."""
-    if run_id not in memory_store.runs:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{run_id}' not found."},
-        )
-
-    run_data = memory_store.runs[run_id]
-
-    report = {
-        "report_title": "AuditGraph Financial Anomaly Triage Report",
-        "disclaimer": "This report prioritizes evidence for human auditor investigation and does not make a fraud determination.",
-        "run_id": run_id,
-        "pipeline_version": run_data.get("pipeline_version"),
-        "analysis_mode": run_data.get("analysis_mode"),
-        "summary": run_data.get("summary"),
-        "detectors_status": run_data.get("detectors"),
-        "prioritized_cases": run_data.get("top_cases", []),
-    }
-
-    return report
+@router.get("/audit-runs/{run_id}/export")
+@router.get("/exports/{run_id}")
+async def export_audit_report(run_id: str, format: str = "json"):
+    report = await get_audit_report(run_id)
+    if format == "json":
+        return Response(json.dumps(report, default=str), media_type="application/json",
+                        headers={"Content-Disposition": f'attachment; filename="{run_id}.json"'})
+    if format != "csv":
+        raise HTTPException(400, "Supported export formats: csv, json")
+    output = io.StringIO()
+    writer = csv.writer(output)
+    fields = ["case_id", "title", "severity", "risk_score", "monetary_exposure"]
+    writer.writerow(fields)
+    for case in report["key_findings"]:
+        values = [case.get(k, "") for k in fields]
+        writer.writerow(["'" + v if isinstance(v, str) and v.startswith(("=", "+", "-", "@")) else v for v in values])
+    return Response(output.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{run_id}.csv"'})

@@ -7,7 +7,9 @@ from app.persistence.store import memory_store
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 
 
-@router.post("", response_model=DatasetRef)
+@router.post("", response_model=DatasetRef, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=DatasetRef, status_code=status.HTTP_201_CREATED)
+@router.post("/upload", response_model=DatasetRef, status_code=status.HTTP_201_CREATED)
 async def upload_dataset(file: UploadFile = File(...)):
     """Upload CSV or XLSX financial ledger dataset."""
     filename = file.filename or "uploaded_ledger.csv"

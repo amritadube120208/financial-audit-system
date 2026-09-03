@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import health, datasets, runs, findings, transactions, entities, copilot, exports
+from app.api.v1 import health, datasets, runs, findings, transactions, entities, copilot, exports, reports
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -11,3 +11,4 @@ api_router.include_router(transactions.router)
 api_router.include_router(entities.router)
 api_router.include_router(copilot.router)
 api_router.include_router(exports.router)
+api_router.include_router(reports.router)

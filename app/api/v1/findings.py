@@ -38,14 +38,28 @@ async def list_findings(run_id: str, limit: int = 25, offset: int = 0, severity:
 
     sliced = cases[offset : offset + limit]
 
+    formatted = []
+    for c in sliced:
+        item = dict(c) if isinstance(c, dict) else c.model_dump()
+        item["finding_id"] = item.get("case_id") or item.get("finding_id")
+        item["severity"] = str(item.get("severity", "LOW")).lower()
+        item["explanation"] = item.get("explanation") or item.get("description", "")
+        item["detector_family"] = ", ".join(k for k, v in item.get("detector_scores", {}).items() if v)
+        item["has_graph"] = bool(item.get("graph_payload"))
+        item["transaction_count"] = len(item.get("transaction_ids", []))
+        item["primary_entity"] = (item.get("entity_ids") or [None])[0]
+        item["anomaly_type"] = (item.get("anomaly_types") or ["ANOMALY"])[0]
+        formatted.append(item)
+
     return {
         "run_id": run_id,
         "total": len(cases),
         "limit": limit,
         "offset": offset,
-        "items": sliced,
+        "items": formatted,
         "total_cases": len(cases),
-        "cases": sliced,
+        "cases": formatted,
+        "findings": formatted,
     }
 
 
@@ -53,17 +67,10 @@ async def list_findings(run_id: str, limit: int = 25, offset: int = 0, severity:
 @router.get("/investigations/{finding_id}")
 async def get_finding(finding_id: str):
     """Retrieve individual investigation case by ID."""
-    stage_store._seed_demo_if_empty()
     for run_id, result in stage_store._runs.items():
         for case in result.get("cases", []):
             if case.get("case_id") == finding_id or case.get("finding_id") == finding_id:
                 return case
-
-    # Fallback to first case in store
-    for run_id, result in stage_store._runs.items():
-        cases = result.get("cases", [])
-        if cases:
-            return cases[0]
 
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -78,27 +85,21 @@ async def get_finding_graph(finding_id: str):
     finding = await get_finding(finding_id)
     graph_payload = finding.get("graph_payload")
 
-    if graph_payload and "nodes" in graph_payload:
-        raw_nodes = graph_payload.get("nodes", [])
-        raw_edges = graph_payload.get("edges", [])
-    else:
-        # Build dynamic nodes from finding's entity_ids and primary counterparty
-        vendor = finding.get("vendor_name", "Primary Counterparty")
-        entities = finding.get("entity_ids", [])
-        if not entities or len(entities) < 2:
-            entities = [vendor, "Intermediary Logistics Entity", "Ultimate Beneficiary Company"]
+    if not graph_payload or not graph_payload.get("nodes"):
+        return {
+            "finding_id": finding_id,
+            "nodes": [],
+            "edges": [],
+            "cycle_info": {
+                "is_cycle": False,
+                "cycle_length": 0,
+                "total_flow_amount": 0.0,
+                "message": "No circular money-flow evidence for this investigation.",
+            },
+        }
 
-        raw_nodes = [
-            {"id": "company_self", "label": "Auditee Enterprise (Self)", "type": "company", "risk_score": 45.0, "gstin": "27AAACB1234K1Z5"},
-            {"id": "node_1", "label": entities[0] if len(entities) > 0 else vendor, "type": "vendor", "risk_score": float(finding.get("risk_score", 85.0)), "gstin": finding.get("gstin", "27BBBCV5678L1Z3")},
-            {"id": "node_2", "label": entities[1] if len(entities) > 1 else "Intermediary Vendor", "type": "vendor", "risk_score": 75.0, "gstin": "27CCCDC9012M1Z7"},
-        ]
-        amt = float(finding.get("amount", 495000.0))
-        raw_edges = [
-            {"id": "edge_1", "source": "company_self", "target": "node_1", "amount": amt, "label": f"₹{amt:,.2f}", "timestamp": "2026-03-30T10:15:00"},
-            {"id": "edge_2", "source": "node_1", "target": "node_2", "amount": round(amt * 0.99, 2), "label": f"₹{amt * 0.99:,.2f}", "timestamp": "2026-03-30T14:30:00"},
-            {"id": "edge_3", "source": "node_2", "target": "company_self", "amount": round(amt * 0.985, 2), "label": f"₹{amt * 0.985:,.2f}", "timestamp": "2026-03-31T09:45:00"},
-        ]
+    raw_nodes = graph_payload.get("nodes", [])
+    raw_edges = graph_payload.get("edges", [])
 
     # Convert nodes and edges into strict Cytoscape format: [{ data: { ... } }]
     cy_nodes = []
@@ -115,13 +116,15 @@ async def get_finding_graph(finding_id: str):
         elif isinstance(e, dict):
             cy_edges.append({"data": e})
 
+    flow_amt = float(finding.get("monetary_exposure") or finding.get("amount") or 0.0)
+
     return {
         "finding_id": finding_id,
         "nodes": cy_nodes,
         "edges": cy_edges,
         "cycle_info": {
-            "is_cycle": True,
+            "is_cycle": len(cy_edges) >= 2,
             "cycle_length": len(cy_nodes),
-            "total_flow_amount": finding.get("amount", 495000.0),
+            "total_flow_amount": flow_amt,
         },
     }
