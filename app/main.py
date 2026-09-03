@@ -1,9 +1,11 @@
+import os
 import time
 import uuid
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.domain.errors import AuditGraphException
@@ -65,6 +67,15 @@ async def auditgraph_exception_handler(request: Request, exc: AuditGraphExceptio
             }
         },
     )
+
+
+# Serve root index HTML demo page
+@app.get("/", include_in_schema=False)
+async def serve_demo_frontend():
+    static_html = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(static_html):
+        return FileResponse(static_html)
+    return JSONResponse({"message": "AuditGraph API Running"})
 
 
 # Mount health endpoints at root level (/healthz, /readyz)
