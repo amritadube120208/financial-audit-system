@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     COPILOT_PROVIDER: str = "fallback"
     OPENAI_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None
+    GROQ_API_KEY: str | None = None
+    GROQ_MODEL: str = "llama-3.3-70b-versatile"
 
     RECOVERY_DIR: str = "data/recovery"
 

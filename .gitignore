@@ -12,6 +12,12 @@ htmlcov/
 data/*.csv
 !data/demo/
 
+# Environment Secrets
+.env
+*.env
+.env.local
+*.env.local
+
 # Node & Next.js
 node_modules/
 apps/web/node_modules/

@@ -14,13 +14,16 @@ class CreateSessionRequest(BaseModel):
     run_id: str
 
 
+from app.config import settings
+
+
 @router.get("/provider-health")
 async def get_copilot_provider_health():
     """Retrieve safe metadata on active Copilot LLM providers and fallbacks."""
-    gemini_avail = bool(os.environ.get("GEMINI_API_KEY", "").strip())
-    groq_avail = bool(os.environ.get("GROQ_API_KEY", "").strip())
-    openrouter_avail = bool(os.environ.get("OPENROUTER_API_KEY", "").strip())
-    openai_avail = bool(os.environ.get("OPENAI_API_KEY", "").strip())
+    gemini_avail = bool((settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY", "")).strip())
+    groq_avail = bool((settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")).strip())
+    openrouter_avail = bool((settings.OPENROUTER_API_KEY or os.environ.get("OPENROUTER_API_KEY", "")).strip())
+    openai_avail = bool((settings.OPENAI_API_KEY or os.environ.get("OPENAI_API_KEY", "")).strip())
 
     if gemini_avail:
         active = "gemini"

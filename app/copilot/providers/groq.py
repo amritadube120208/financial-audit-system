@@ -5,12 +5,15 @@ from typing import Any
 from app.copilot.providers.base import BaseLLMProvider, ProviderResponse, CopilotCitation
 
 
+from app.config import settings
+
+
 class GroqProvider(BaseLLMProvider):
     """GroqCloud Free LLM Provider."""
 
     def __init__(self, api_key: str | None = None, model: str | None = None):
-        self.api_key = api_key or os.environ.get("GROQ_API_KEY", "")
-        self.model = model or os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+        self.api_key = api_key or settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")
+        self.model = model or settings.GROQ_MODEL or os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
         self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
 
     def is_available(self) -> bool:
