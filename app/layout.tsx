@@ -1,24 +1,22 @@
 import type { Metadata } from "next";
-import { Syne, Sora, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 
-const syne = Syne({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+const syne = localFont({
+  src: "../public/fonts/syne-latin.woff2",
   variable: "--font-display",
 });
 
-const sora = Sora({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const sora = localFont({
+  src: "../public/fonts/sora-latin.woff2",
   variable: "--font-body",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "../public/fonts/jetbrains-mono-latin.woff2",
   variable: "--font-mono",
 });
 

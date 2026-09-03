@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 interface AuditUiState {
+  reset: () => void;
   // Findings table filter state
   severityFilter: string | null;
   minRiskFilter: number | null;
@@ -26,6 +27,7 @@ interface AuditUiState {
 }
 
 export const useAuditUiStore = create<AuditUiState>((set) => ({
+  reset: () => set({ severityFilter: null, minRiskFilter: null, searchQuery: "", selectedFindingId: null, isFindingDrawerOpen: false, isCopilotOpen: false, activeTab: "findings" }),
   severityFilter: null,
   minRiskFilter: null,
   searchQuery: "",

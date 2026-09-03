@@ -14,7 +14,7 @@ import type {
   TransactionsListResponse,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
@@ -23,6 +23,11 @@ export const apiClient = axios.create({
   },
   timeout: 30000,
 });
+
+export function getApiErrorCode(error: unknown): string | undefined {
+  if (!axios.isAxiosError(error)) return undefined;
+  return error.response?.data?.detail?.code || error.response?.data?.error?.code;
+}
 
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
@@ -132,8 +137,16 @@ export async function getFindingDetail(findingId: string): Promise<FindingItem> 
 }
 
 export async function getFindingGraph(findingId: string): Promise<FindingGraphResponse> {
-  const res = await apiClient.get<FindingGraphResponse>(`/api/v1/findings/${findingId}/graph`);
-  return res.data;
+  type Node = { id: string; label: string; type?: string };
+  type Edge = { id: string; source: string; target: string; weight?: number; amount?: number };
+  const res = await apiClient.get<{ nodes: (Node | { data: Node })[]; edges: (Edge | { data: Edge })[] }>(`/api/v1/findings/${findingId}/graph`);
+  return {
+    ...res.data,
+    finding_id: findingId,
+    metrics: {},
+    nodes: res.data.nodes.map(n => "data" in n ? n.data : n),
+    edges: res.data.edges.map(e => { const d = "data" in e ? e.data : e; return { ...d, weight: Number(d.weight ?? d.amount ?? 0) }; }),
+  };
 }
 
 // 5. Transactions
@@ -171,7 +184,7 @@ export async function sendCopilotMessage(
     `/api/v1/copilot/sessions/${sessionId}/messages`,
     {
       message,
-      finding_id: findingId || null,
+      selected_case_id: findingId || null,
     }
   );
   return res.data;

@@ -7,12 +7,11 @@ interface KpiOverviewProps {
 }
 
 export function KpiOverview({ metrics }: KpiOverviewProps) {
-  const m = metrics as any;
-  const totalTxns = metrics.total_transactions ?? m.transactions_analyzed ?? 0;
-  const suspicious = metrics.suspicious_transactions ?? m.unique_suspicious_transactions ?? 0;
+  const totalTxns = metrics.total_transactions ?? 0;
+  const suspicious = metrics.suspicious_transactions ?? 0;
   const rawFlags = metrics.raw_detector_flags ?? 0;
   const critical = metrics.critical_findings ?? 0;
-  const exposure = metrics.total_exposure ?? m.monetary_exposure_inr ?? 0;
+  const exposure = metrics.total_exposure ?? 0;
 
   const cards = [
     {

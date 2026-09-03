@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { X, FileText, ArrowRight, Layers } from "lucide-react";
 import type { FindingItem, Severity } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
@@ -19,6 +20,9 @@ const SEVERITY_BADGES: Record<Severity, string> = {
 };
 
 export function FindingDrawer({ finding, isOpen, onClose, runId }: FindingDrawerProps) {
+  const [remediation, setRemediation] = useState<{ recommended_audit_actions: string[]; proposed_corrective_actions: string[]; statutory_standards: string[] } | null>(null);
+  const [isLoadingRemediation, setIsLoadingRemediation] = useState(false);
+
   if (!isOpen || !finding) return null;
 
   const badge = SEVERITY_BADGES[finding.severity] || SEVERITY_BADGES.medium;
@@ -124,6 +128,68 @@ export function FindingDrawer({ finding, isOpen, onClose, runId }: FindingDrawer
             </div>
           ) : (
             <p className="text-xs font-mono text-[#6C7378]">No granular evidence items attached.</p>
+          )}
+        </div>
+
+        {/* AI Recommended Remediation & Audit Actions */}
+        <div className="py-4 border-b border-[rgba(237,231,220,0.1)]">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-mono uppercase tracking-[0.14em] text-[#E8913C] flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-[#E8913C]" /> AI RECOMMENDED AUDIT ACTIONS
+            </h3>
+            <button
+              onClick={async () => {
+                try {
+                  setIsLoadingRemediation(true);
+                  const res = await fetch(`/api/v1/audit-runs/${runId}/cases/${finding.finding_id}/remediation`);
+                  if (res.ok) {
+                    const data = await res.json();
+                    setRemediation(data);
+                  }
+                } catch {
+                } finally {
+                  setIsLoadingRemediation(false);
+                }
+              }}
+              className="text-[10px] font-mono px-2.5 py-1 rounded-sm bg-[#0A0C0E] text-[#E8913C] border border-[#E8913C]/40 hover:bg-[#E8913C] hover:text-[#0A0C0E] transition-colors"
+            >
+              {isLoadingRemediation ? "Synthesizing..." : remediation ? "Re-evaluate" : "Generate Audit Actions"}
+            </button>
+          </div>
+
+          {remediation ? (
+            <div className="space-y-3 font-mono text-xs bg-[#0A0C0E] p-4 rounded-sm border border-[rgba(237,231,220,0.1)]">
+              <div>
+                <span className="text-[10.5px] uppercase tracking-[0.1em] text-[#6C7378] block mb-1.5 font-bold">
+                  Recommended Audit Procedures:
+                </span>
+                <ul className="space-y-1.5 text-[#EDE7DC] list-disc list-inside font-body text-xs leading-relaxed">
+                  {remediation.recommended_audit_actions?.map((act: string, idx: number) => (
+                    <li key={idx}>{act}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-2 border-t border-[rgba(237,231,220,0.08)]">
+                <span className="text-[10.5px] uppercase tracking-[0.1em] text-[#E8913C] block mb-1.5 font-bold">
+                  Proposed Corrective Actions (CA Discretion):
+                </span>
+                <ul className="space-y-1 text-[#9EA5A8] list-disc list-inside font-body text-xs leading-relaxed">
+                  {remediation.proposed_corrective_actions?.map((act: string, idx: number) => (
+                    <li key={idx}>{act}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-2 border-t border-[rgba(237,231,220,0.08)] flex items-center justify-between text-[10px] text-[#6C7378]">
+                <span>Statutory Standards: {remediation.statutory_standards?.join(", ")}</span>
+                <span className="text-[#2E6B72]">Non-destructive Advisory</span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs font-body text-[#9EA5A8]">
+              Click &quot;Generate Audit Actions&quot; to synthesize evidence-backed verification procedures and corrective proposals.
+            </p>
           )}
         </div>
 

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
-export default function DeprecatedTransactionsPage({ params }: { params: { runId: string } }) {
-  redirect(`/audit/${params.runId}#transactions`);
+export default async function DeprecatedTransactionsPage({ params }: { params: Promise<{ runId: string }> }) {
+  const { runId } = await params;
+  redirect(`/audit/${runId}#transactions`);
 }

@@ -18,7 +18,7 @@ export interface DeckItem {
 
 interface FindingDeckProps {
   items: DeckItem[];
-  activeRunId: string;
+  activeRunId: string | null;
 }
 
 export function FindingDeck({ items, activeRunId }: FindingDeckProps) {
@@ -90,8 +90,20 @@ export function FindingDeck({ items, activeRunId }: FindingDeckProps) {
 
   if (deck.length === 0) {
     return (
-      <div className="p-8 border border-[rgba(237,231,220,0.13)] bg-[#101317] text-center text-xs font-mono text-[#9EA5A8]">
-        NO INVESTIGATION CARDS ACTIVE
+      <div className="p-12 border border-[rgba(237,231,220,0.13)] bg-[#101317] rounded-sm text-center max-w-md mx-auto space-y-4">
+        <span className="h-2 w-2 rounded-full bg-[#2E6B72] inline-block" />
+        <p className="text-xs font-mono text-[#9EA5A8] uppercase tracking-[0.14em]">
+          No Active Audit Engaged
+        </p>
+        <p className="text-xs font-body text-[#6C7378] max-w-xs mx-auto">
+          Upload a financial ledger (.csv or .xlsx) to initialize multi-engine forensic anomaly triage.
+        </p>
+        <Link
+          href="/audit"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-sm bg-[#E8913C] text-[#0A0C0E] font-mono text-xs uppercase font-semibold tracking-wider hover:bg-[#E8913C]/90 transition-colors"
+        >
+          Start New Audit <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     );
   }

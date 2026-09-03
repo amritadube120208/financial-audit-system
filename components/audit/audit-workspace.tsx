@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldAlert,
   FileSpreadsheet,
@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Download,
   Filter,
+  FileText,
 } from "lucide-react";
 
 import {
@@ -65,6 +66,7 @@ interface AuditWorkspaceProps {
 export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const queryRunId = searchParams?.get("run");
   const queryCaseId = searchParams?.get("case");
 
@@ -79,20 +81,42 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
     setCopilotOpen,
   } = useAuditUiStore();
 
-  // Active run ID resolution: route param > query param > store > canonical fallback
-  const DEFAULT_CANONICAL_RUN_ID = "run_df347dce3c1f489e";
+  const { clearActiveRun } = useAuditContextStore();
   const [activeRunId, setActiveRunId] = useState<string | null>(
-    initialRunId || queryRunId || lastActiveRunId || DEFAULT_CANONICAL_RUN_ID
+    initialRunId || queryRunId || lastActiveRunId || null
   );
+
+  const handleNewAudit = () => {
+    clearActiveRun();
+    setActiveRunId(null);
+    setSelectedFile(null);
+    setDatasetInfo(null);
+    setUploadProgress(null);
+    setUploadError(null);
+    setLiveEvent(null);
+    useAuditUiStore.getState().reset();
+    setTxnSearch("");
+    setActiveTxnSearch("");
+    setTxnPage(0);
+    setSelectedTxn(null);
+    setIsTxnDrawerOpen(false);
+    setIsPollingFallback(false);
+    void queryClient.cancelQueries();
+    queryClient.clear();
+    router.replace("/audit");
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, "", "/audit");
+    }
+  };
 
   // Sync run ID changes
   useEffect(() => {
     const id = initialRunId || queryRunId;
-    if (id && id !== activeRunId) {
+    if (id) {
       setActiveRunId(id);
       setLastActiveRunId(id);
     }
-  }, [initialRunId, queryRunId, activeRunId, setLastActiveRunId]);
+  }, [initialRunId, queryRunId, setLastActiveRunId]);
 
   // Open Copilot if hash is #copilot
   useEffect(() => {
@@ -197,9 +221,8 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
   // Query Graph for active finding
   const graphFindingId = useMemo(() => {
     if (activeFinding?.has_graph) return activeFinding.finding_id;
-    const first = findingsList.find((f) => f.has_graph);
-    return first?.finding_id || null;
-  }, [activeFinding, findingsList]);
+    return null;
+  }, [activeFinding]);
 
   const { data: graphData, isLoading: isGraphLoading } = useQuery({
     queryKey: ["finding-graph", graphFindingId],
@@ -235,6 +258,7 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
       setUploadError("Only CSV (.csv) and Excel (.xlsx) accounting ledgers are accepted.");
       return;
     }
+    handleNewAudit();
     setSelectedFile(file);
     setUploadError(null);
     setIsUploading(true);
@@ -262,6 +286,7 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
     try {
       const run = await createAuditRun({ dataset_id: datasetInfo.dataset_id });
       setActiveRunId(run.run_id);
+      router.replace(`/audit?run=${encodeURIComponent(run.run_id)}`);
       setLastActiveRunId(run.run_id);
       addRecentRun({
         runId: run.run_id,
@@ -331,24 +356,40 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
             {activeRunId && isFinalized && (
               <>
                 <a
+                  href={`/api/v1/audit-runs/${activeRunId}/report/printable`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[#E8913C]/50 bg-[#E8913C]/10 hover:bg-[#E8913C] text-[#E8913C] hover:text-[#0A0C0E] transition-colors font-mono font-semibold uppercase"
+                >
+                  <FileText className="h-3 w-3" /> REPORT
+                </a>
+                <a
                   href={getExportUrl(activeRunId, "csv")}
                   download
-                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[rgba(237,231,220,0.15)] bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] transition-colors"
+                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[rgba(237,231,220,0.15)] bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] transition-colors font-mono"
                 >
                   <Download className="h-3 w-3" /> CSV
                 </a>
                 <a
                   href={getExportUrl(activeRunId, "json")}
                   download
-                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[rgba(237,231,220,0.15)] bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] transition-colors"
+                  className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[rgba(237,231,220,0.15)] bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] transition-colors font-mono"
                 >
                   <Download className="h-3 w-3" /> JSON
                 </a>
               </>
             )}
+            {activeRunId && (
+              <button
+                onClick={handleNewAudit}
+                className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[rgba(237,231,220,0.2)] bg-[#101317] hover:border-[#E8913C] text-[#9EA5A8] hover:text-[#EDE7DC] transition-colors font-mono uppercase"
+              >
+                NEW AUDIT
+              </button>
+            )}
             <button
               onClick={toggleCopilot}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#101317] text-[#EDE7DC] border border-[rgba(237,231,220,0.2)] hover:border-[#E8913C] hover:text-[#E8913C] font-semibold text-xs tracking-[0.08em] transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#101317] text-[#EDE7DC] border border-[rgba(237,231,220,0.2)] hover:border-[#E8913C] hover:text-[#E8913C] font-semibold text-xs tracking-[0.08em] transition-colors font-mono"
             >
               <Bot className="h-3.5 w-3.5 text-[#E8913C]" /> COPILOT
             </button>
@@ -365,10 +406,14 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
             <div>
               <div className="flex flex-wrap items-center gap-2 mb-2 font-mono text-xs">
                 <span className="text-[#6C7378] uppercase tracking-[0.14em]">
-                  AUDIT WORKSPACE
+                  {activeRunId ? "ACTIVE AUDIT" : "AUDIT WORKSPACE"}
                 </span>
                 {activeRunId && (
                   <>
+                    <span className="text-[#6C7378]">•</span>
+                    <span className="text-[#EDE7DC] bg-[#101317] px-2 py-0.5 rounded-sm border border-[rgba(237,231,220,0.12)]">
+                      {datasetInfo?.filename || summaryData?.dataset?.filename || "Ledger Ingested"}
+                    </span>
                     <span className="text-[#6C7378]">•</span>
                     <span className="text-[#EDE7DC] bg-[#101317] px-2 py-0.5 rounded-sm border border-[rgba(237,231,220,0.12)]">
                       {activeRunId}
@@ -392,10 +437,14 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
               </div>
 
               <h1 className="font-display font-bold text-2xl sm:text-3xl text-[#EDE7DC] tracking-tight">
-                {summaryData?.dataset?.filename || "Financial Ledger Investigation"}
+                {activeRunId
+                  ? (datasetInfo?.filename || summaryData?.dataset?.filename || "Financial Ledger Investigation")
+                  : "No Active Audit Engagement"}
               </h1>
               <p className="text-xs sm:text-sm font-body text-[#9EA5A8] mt-1 max-w-3xl">
-                Upload and analyze a financial ledger, investigate anomalies, trace suspicious money flows and review evidence.
+                {activeRunId
+                  ? "Multi-engine anomaly triage running on uploaded ledger data. Inspect red flags and trace evidence."
+                  : "Upload a financial ledger (.csv or .xlsx) below to begin multi-engine forensic anomaly triage."}
               </p>
             </div>
 
@@ -735,6 +784,7 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
 
       {/* Slide-over Investigation Evidence Drawer */}
       <FindingDrawer
+        key={`${activeRunId}:${activeFinding?.finding_id}`}
         finding={activeFinding}
         isOpen={isFindingDrawerOpen}
         onClose={closeFindingDrawer}
@@ -751,10 +801,12 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
 
       {/* AI Copilot Panel */}
       <CopilotPanel
-        runId={activeRunId || DEFAULT_CANONICAL_RUN_ID}
+        key={activeRunId || "empty"}
+        runId={activeRunId || ""}
         activeFinding={activeFinding}
         isOpen={isCopilotOpen}
         onClose={() => setCopilotOpen(false)}
+        onStartNewAudit={handleNewAudit}
       />
     </div>
   );

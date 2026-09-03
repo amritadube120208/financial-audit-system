@@ -7,10 +7,9 @@ interface RiskFunnelProps {
 }
 
 export function RiskFunnel({ metrics }: RiskFunnelProps) {
-  const m = metrics as any;
-  const total = metrics.total_transactions ?? m.transactions_analyzed ?? 1;
+  const total = metrics.total_transactions ?? 0;
   const rawFlags = metrics.raw_detector_flags ?? 0;
-  const suspicious = metrics.suspicious_transactions ?? m.unique_suspicious_transactions ?? 0;
+  const suspicious = metrics.suspicious_transactions ?? 0;
   const critical = metrics.critical_findings ?? 0;
   const high = metrics.high_findings ?? 0;
   const medium = metrics.medium_findings ?? 0;

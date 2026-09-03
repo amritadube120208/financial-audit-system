@@ -188,6 +188,8 @@ export interface TransactionsListResponse {
 }
 
 export interface SystemHealthResponse {
+  ml?: { ml_model: string; model_version: string; feature_schema_version: string };
+  engines?: Record<string, boolean>;
   status: "ready" | "degraded" | "unhealthy";
   components: {
     database: string;
@@ -210,6 +212,9 @@ export interface SystemVersionResponse {
 }
 
 export interface CopilotCitation {
+  source_type?: string;
+  source_id?: string;
+  field?: string;
   type: "finding" | "transaction" | "entity";
   id: string;
   label: string;

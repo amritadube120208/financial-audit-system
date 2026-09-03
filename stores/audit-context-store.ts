@@ -10,7 +10,8 @@ export interface StoredRun {
 interface AuditContextState {
   lastActiveRunId: string | null;
   recentRuns: StoredRun[];
-  setLastActiveRunId: (runId: string) => void;
+  setLastActiveRunId: (runId: string | null) => void;
+  clearActiveRun: () => void;
   addRecentRun: (run: StoredRun) => void;
 }
 
@@ -20,7 +21,7 @@ export const useAuditContextStore = create<AuditContextState>((set) => {
   let initialRecent: StoredRun[] = [];
   if (typeof window !== "undefined") {
     try {
-      initialRunId = localStorage.getItem("auditgraph_last_run");
+      // An active audit is opened explicitly; persisted history never auto-selects one.
       const stored = localStorage.getItem("auditgraph_recent_runs");
       if (stored) initialRecent = JSON.parse(stored);
     } catch {
@@ -31,13 +32,25 @@ export const useAuditContextStore = create<AuditContextState>((set) => {
   return {
     lastActiveRunId: initialRunId,
     recentRuns: initialRecent,
-    setLastActiveRunId: (runId: string) => {
+    setLastActiveRunId: (runId: string | null) => {
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem("auditgraph_last_run", runId);
+          if (runId) {
+            localStorage.setItem("auditgraph_last_run", runId);
+          } else {
+            localStorage.removeItem("auditgraph_last_run");
+          }
         } catch {}
       }
       set({ lastActiveRunId: runId });
+    },
+    clearActiveRun: () => {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("auditgraph_last_run");
+        } catch {}
+      }
+      set({ lastActiveRunId: null });
     },
     addRecentRun: (run: StoredRun) => {
       set((state) => {

@@ -24,6 +24,7 @@ interface GraphViewerProps {
 export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
+  const [graphError, setGraphError] = useState<string | null>(null);
   const [selectedElement, setSelectedElement] = useState<{
     id: string;
     label: string;
@@ -32,6 +33,8 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
   } | null>(null);
 
   useEffect(() => {
+    setSelectedElement(null);
+    setGraphError(null);
     if (!containerRef.current || !graphData || !graphData.nodes || graphData.nodes.length === 0) {
       return;
     }
@@ -67,7 +70,9 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
       });
     });
 
-    const cy = cytoscape({
+    let cy: Core;
+    try {
+    cy = cytoscape({
       container: containerRef.current,
       elements,
       style: [
@@ -137,6 +142,10 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
       },
     });
 
+    } catch {
+      setGraphError("Money-flow graph could not be displayed. Other investigation evidence remains available.");
+      return;
+    }
     cy.on("tap", "node", (evt) => {
       const node = evt.target;
       setSelectedElement({
@@ -183,6 +192,7 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
 
   return (
     <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden flex flex-col my-6">
+      {graphError && <p role="alert" className="p-4 text-xs text-amber-500">{graphError}</p>}
       {/* Graph Toolbar */}
       <div className="p-4 border-b border-border/70 flex items-center justify-between gap-3 bg-secondary/30">
         <div className="flex items-center gap-2">
@@ -241,9 +251,9 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
         ) : !hasNodes ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-xs text-muted-foreground">
             <Info className="h-8 w-8 text-muted-foreground/50 mb-2" />
-            <p className="font-medium text-foreground">No Relational Graph for Selected Finding</p>
+            <p className="font-medium text-foreground">No circular money-flow evidence for this investigation.</p>
             <p className="max-w-sm mt-1">
-              Select an investigation finding with multi-party transfers or circular round-tripping to inspect directed entity interactions.
+              This investigation case does not contain directed multi-party circular fund transfers.
             </p>
           </div>
         ) : (

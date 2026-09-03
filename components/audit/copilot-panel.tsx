@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { MessageSquare, Send, Bot, User, Sparkles, AlertCircle, CheckCircle2, ChevronRight, X, ShieldAlert } from "lucide-react";
-import { createCopilotSession, sendCopilotMessage, getCopilotMessages, getErrorMessage } from "@/lib/api";
+import { createCopilotSession, sendCopilotMessage, getApiErrorCode, getErrorMessage } from "@/lib/api";
 import type { CopilotMessage, FindingItem } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 
@@ -11,26 +11,38 @@ interface CopilotPanelProps {
   activeFinding?: FindingItem | null;
   isOpen: boolean;
   onClose: () => void;
+  onStartNewAudit: () => void;
 }
 
-const CANONICAL_STAGE_RUN_ID = "run_df347dce3c1f489e";
-
-export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotPanelProps) {
+export function CopilotPanel({ runId, activeFinding, isOpen, onClose, onStartNewAudit }: CopilotPanelProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const canSend = Boolean(runId && sessionId) && !isLoading && !isConnecting;
+  const explainError = (err: unknown) => getApiErrorCode(err) === "RUN_NOT_FOUND"
+    ? "This audit is no longer available. Upload and analyze your ledger again to continue."
+    : getErrorMessage(err);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Initialize session
+  // Initialize session for current active run only
   useEffect(() => {
     let mounted = true;
     async function init() {
+      if (!runId?.trim()) {
+        setSessionId(null);
+        setMessages([]);
+        return;
+      }
+
       setErrorMessage(null);
-      const targetRunId = runId?.trim() || CANONICAL_STAGE_RUN_ID;
+      setIsConnecting(true);
+      const targetRunId = runId.trim();
       try {
-        const session = await createCopilotSession(targetRunId, `Audit ${targetRunId.slice(0, 8)}`);
+        const session = await createCopilotSession(targetRunId, `Audit ${targetRunId.slice(0, 10)}`);
         if (mounted) {
           setSessionId(session.session_id);
           // Initial greeting
@@ -41,7 +53,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
               run_id: targetRunId,
               role: "assistant",
               answer:
-                "Hello, I am your AuditGraph AI Copilot. I can inspect ledger findings, explain statistical anomaly flags, query counterparty transaction volumes, or provide audit evidence citations. How can I assist your investigation?",
+                `Hello, I am your AuditGraph AI Copilot for audit run ${targetRunId}. I am grounded in your uploaded ledger data. How can I assist your investigation?`,
               mode: "deterministic_fallback",
               confidence: "high",
               grounded: true,
@@ -50,40 +62,22 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
           ]);
         }
       } catch (err) {
-        // If targetRunId failed and it wasn't the default canonical run, fall back to canonical run
-        if (targetRunId !== CANONICAL_STAGE_RUN_ID) {
-          try {
-            const fallbackSession = await createCopilotSession(CANONICAL_STAGE_RUN_ID, "Audit Default");
-            if (mounted) {
-              setSessionId(fallbackSession.session_id);
-              setMessages([
-                {
-                  message_id: "welcome",
-                  session_id: fallbackSession.session_id,
-                  run_id: CANONICAL_STAGE_RUN_ID,
-                  role: "assistant",
-                  answer:
-                    "Connected to the canonical audit run (run_df347dce3c1f489e). How can I assist your investigation?",
-                  mode: "deterministic_fallback",
-                  confidence: "high",
-                  grounded: true,
-                  safety_note: "Auditor review signal only, not a legal fraud determination.",
-                },
-              ]);
-            }
-            return;
-          } catch {
-            // fall through to error message
-          }
+        if (mounted) {
+          setErrorMessage(explainError(err));
         }
-        if (mounted) setErrorMessage(getErrorMessage(err));
+      } finally {
+        if (mounted) setIsConnecting(false);
       }
     }
-    init();
+
+    if (isOpen && !sessionId) {
+      init();
+    }
+
     return () => {
       mounted = false;
     };
-  }, [runId]);
+  }, [runId, isOpen, sessionId, retryCount]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -100,7 +94,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
     const userMsg: CopilotMessage = {
       message_id: `user_${Date.now()}`,
       session_id: sessionId,
-      run_id: runId || "run_df347dce3c1f489e",
+      run_id: runId || "",
       role: "user",
       content: query,
     };
@@ -108,10 +102,20 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
     setIsLoading(true);
 
     try {
-      const response = await sendCopilotMessage(sessionId, query, activeFinding?.finding_id);
+      let response;
+      try {
+        response = await sendCopilotMessage(sessionId, query, activeFinding?.finding_id);
+      } catch (err) {
+        if (getApiErrorCode(err) !== "SESSION_NOT_FOUND" || !runId) throw err;
+        const renewed = await createCopilotSession(runId);
+        setSessionId(renewed.session_id);
+        response = await sendCopilotMessage(renewed.session_id, query, activeFinding?.finding_id);
+      }
       setMessages((prev) => [...prev, { ...response, role: "assistant" }]);
     } catch (err) {
-      setErrorMessage(getErrorMessage(err));
+      setInput(query);
+      setMessages((prev) => prev.filter((m) => m.message_id !== userMsg.message_id));
+      setErrorMessage(explainError(err));
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +142,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
               </span>
             </div>
             <span className="font-mono text-[10px] text-[#6C7378] block">
-              GROQ LLM {"//"} AUDIT PROVENANCE ENGINE
+              {messages.some(m => m.mode === "llm_grounded") ? "AI MODE" : "EVIDENCE MODE"} {"//"} AUDIT PROVENANCE ENGINE
             </span>
           </div>
         </div>
@@ -172,6 +176,11 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
 
       {/* Messages Scroll Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
+        {!runId && <div className="text-[#EDE7DC] space-y-3">
+          <p>Upload a ledger and start analysis to ask Copilot about your audit.</p>
+          <button onClick={onStartNewAudit} className="text-[#E8913C] underline">Upload a ledger</button>
+        </div>}
+        {isConnecting && <p role="status" className="text-[#9EA5A8]">Connecting to your audit...</p>}
         {messages.map((m, idx) => {
           const isUser = m.role === "user";
           return (
@@ -196,7 +205,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
                     <span className="text-[#6C7378] font-semibold block uppercase tracking-[0.1em]">Citations:</span>
                     {m.citations.map((c, i) => (
                       <div key={i} className="text-[#2E6B72] truncate">
-                        • [{c.type}] {c.label} ({c.id})
+                        • [{c.source_type || c.type}] {c.field || c.label} ({c.source_id || c.id})
                       </div>
                     ))}
                   </div>
@@ -231,36 +240,42 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
       {/* Quick Action Buttons */}
       <div className="px-4 py-2.5 border-t border-[rgba(237,231,220,0.1)] bg-[#0A0C0E] flex flex-wrap gap-1.5 text-[10px] font-mono">
         <button
+          disabled={!canSend}
           onClick={() => handleSend("Why is this risky?")}
           className="px-2.5 py-1 rounded-sm bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] border border-[rgba(237,231,220,0.15)] transition-colors"
         >
           Why is this risky?
         </button>
         <button
+          disabled={!canSend}
           onClick={() => handleSend("Trace money flows and circular counterparty paths.")}
           className="px-2.5 py-1 rounded-sm bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] border border-[rgba(237,231,220,0.15)] transition-colors"
         >
           Trace Money
         </button>
         <button
+          disabled={!canSend}
           onClick={() => handleSend("Explain the statistical anomaly scoring risk.")}
           className="px-2.5 py-1 rounded-sm bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] border border-[rgba(237,231,220,0.15)] transition-colors"
         >
           Explain Risk
         </button>
         <button
+          disabled={!canSend}
           onClick={() => handleSend("Summarize any GST reconciliation or invoice evidence.")}
           className="px-2.5 py-1 rounded-sm bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] border border-[rgba(237,231,220,0.15)] transition-colors"
         >
           GST Evidence
         </button>
         <button
+          disabled={!canSend}
           onClick={() => handleSend("What if the graph cycle is removed from the fusion score?")}
           className="px-2.5 py-1 rounded-sm bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] border border-[rgba(237,231,220,0.15)] transition-colors"
         >
           What If Graph Removed?
         </button>
         <button
+          disabled={!canSend}
           onClick={() => handleSend("What are the next audit verification steps for workpapers?")}
           className="px-2.5 py-1 rounded-sm bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] border border-[rgba(237,231,220,0.15)] transition-colors"
         >
@@ -271,7 +286,9 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
       {/* Error Bar */}
       {errorMessage && (
         <div className="px-4 py-2 bg-[#E8913C]/10 text-[#E8913C] text-[11px] font-mono border-t border-[#E8913C]/40">
-          {errorMessage}
+          <p role="alert">{errorMessage}</p>
+          {!sessionId && runId && <button disabled={isConnecting} onClick={() => setRetryCount((n) => n + 1)} className="underline mr-3">Retry connection</button>}
+          <button onClick={onStartNewAudit} className="underline">Start new audit</button>
         </div>
       )}
 
@@ -279,7 +296,8 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
       <div className="p-3 border-t border-[rgba(237,231,220,0.1)] bg-[#0A0C0E] flex items-center gap-2">
         <input
           type="text"
-          placeholder="Ask Copilot about findings, rules, or entities..."
+          disabled={!sessionId || isConnecting}
+          placeholder={runId ? "Ask Copilot about findings, rules, or entities..." : "Upload and analyze a ledger first"}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -287,7 +305,8 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
         />
         <button
           onClick={() => handleSend()}
-          disabled={!input.trim() || isLoading}
+          aria-label="Send message"
+          disabled={!input.trim() || !canSend}
           className="h-9 w-9 rounded-sm bg-[#E8913C] hover:bg-[#E8913C]/90 text-[#0A0C0E] flex items-center justify-center transition-colors disabled:opacity-50"
         >
           <Send className="h-4 w-4" />

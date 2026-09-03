@@ -15,11 +15,12 @@ import { useAuditContextStore } from "@/stores/audit-context-store";
 import { getAuditRunSummary, getAuditRunFindings } from "@/lib/api";
 import { formatINR } from "@/lib/utils";
 import { FindingDeck, DeckItem } from "@/components/home/finding-deck";
+import { KpiOverview } from "@/components/audit/kpi-overview";
 import { AnomalyMatrix } from "@/components/home/anomaly-matrix";
 
 export default function HomePage() {
   const { lastActiveRunId } = useAuditContextStore();
-  const activeRunId = lastActiveRunId || "run_df347dce3c1f489e";
+  const activeRunId = lastActiveRunId;
 
   // Scroll Progress State for Hero Portal
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -67,7 +68,7 @@ export default function HomePage() {
   const metrics = summaryData?.metrics;
   const rawFindings = findingsData?.findings || [];
 
-  // Convert real findings into throwable deck items
+  // Convert real findings into throwable deck items (Zero fake items)
   const deckItems: DeckItem[] =
     rawFindings.length > 0
       ? rawFindings.map((f) => ({
@@ -77,41 +78,10 @@ export default function HomePage() {
           risk_score: f.risk_score,
           monetary_exposure: f.monetary_exposure,
           anomaly_type: f.anomaly_type,
-          evidence_count: f.evidence?.length || 3,
+          evidence_count: f.evidence?.length || 0,
           primary_entity: f.primary_entity || undefined,
         }))
-      : [
-          {
-            id: "fnd_demo_01",
-            title: "Tri-Party Round-Trip Circulation",
-            severity: "critical",
-            risk_score: 94,
-            monetary_exposure: 1850000,
-            anomaly_type: "CIRCULAR_FLOW",
-            evidence_count: 4,
-            primary_entity: "Apex Logistics Ltd",
-          },
-          {
-            id: "fnd_demo_02",
-            title: "Near-Duplicate Period-End Invoicing",
-            severity: "high",
-            risk_score: 82,
-            monetary_exposure: 420000,
-            anomaly_type: "DUPLICATE_PAYMENT",
-            evidence_count: 3,
-            primary_entity: "Zenith Infotech Pvt",
-          },
-          {
-            id: "fnd_demo_03",
-            title: "Multi-Axis Statistical Outlier Spike",
-            severity: "high",
-            risk_score: 78,
-            monetary_exposure: 680000,
-            anomaly_type: "MULTIVARIATE_OUTLIER",
-            evidence_count: 2,
-            primary_entity: "Vanguard Supplies",
-          },
-        ];
+      : [];
 
   // Motion values
   const effectiveProgress = prefersReducedMotion ? 1 : scrollProgress;
@@ -127,6 +97,13 @@ export default function HomePage() {
 
   return (
     <div className="flex-1 flex flex-col bg-[#0A0C0E] text-[#EDE7DC]">
+      {!activeRunId && <section className="container mx-auto px-6 py-10 border-b border-white/10">
+        <p className="text-xs font-mono text-[#9EA5A8]">AI-Powered Financial Audit Anomaly Detection</p>
+        <h1 className="text-3xl font-display mt-2">No active audit</h1>
+        <p className="my-3 text-[#9EA5A8]">Upload a financial ledger to begin analysis.</p>
+        <Link href="/audit" className="inline-block bg-[#E8913C] text-[#0A0C0E] px-5 py-3 font-mono text-sm">START NEW AUDIT</Link>
+      </section>}
+      {activeRunId && metrics && <section className="container mx-auto px-6 pt-16"><KpiOverview metrics={metrics} /></section>}
       {/* ============================================================ */}
       {/* 1. HERO — CINEMATIC PORTAL (2.2 Viewport Heights)            */}
       {/* ============================================================ */}
@@ -324,7 +301,7 @@ export default function HomePage() {
               </h2>
             </div>
             <span className="font-mono text-xs text-[#9EA5A8]">
-              PARALLEL PIPELINE {"//"} 5 ENGINES ACTIVE
+              AUDIT ANALYSIS CAPABILITIES
             </span>
           </div>
 
@@ -334,8 +311,8 @@ export default function HomePage() {
               {
                 index: "01",
                 name: "Deterministic Audit Rules",
-                desc: "10 codified statutory red flags: round-trips, rapid reversals, exact duplicates, near-duplicates, backdating, and holiday postings.",
-                status: "RULE ENGINE ACTIVE",
+                desc: "Ledger checks for exact and near duplicates, rapid reversals, delayed postings, period-end entries, rare counterparties, round amounts, and high values.",
+                status: "DETERMINISTIC RULES",
               },
               {
                 index: "02",
@@ -347,12 +324,12 @@ export default function HomePage() {
                 index: "03",
                 name: "Graph Cycle & Round-Trip Forensics",
                 desc: "NetworkX directed graph cycle enumeration identifying closed money flow loops (A → B → C → A) inflating turnover.",
-                status: "TARJAN ALGORITHM",
+                status: "BOUNDED CYCLE SEARCH",
               },
               {
                 index: "04",
-                name: "GST-to-Book Invoice Reconciliation",
-                desc: "Automated cross-check of ledger procurement against counterparty GSTR-2B filing records to detect missing tax credits.",
+                name: "Ledger-Reported GST Variances",
+                desc: "Surfaces explicit GST mismatch markers in the uploaded ledger. Independent tax-return reconciliation requires supporting records.",
                 status: "TAX COMPLIANCE",
               },
               {

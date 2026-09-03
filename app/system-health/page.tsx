@@ -13,10 +13,10 @@ import {
   ShieldCheck,
   Server,
 } from "lucide-react";
-import { getHealthz, getReadyz, getVersion } from "@/lib/api";
+import { getHealthz, getReadyz, getVersion, apiClient } from "@/lib/api";
 
 export default function SystemHealthPage() {
-  const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
   // 1. Probing /healthz
   const {
@@ -47,7 +47,12 @@ export default function SystemHealthPage() {
     queryFn: getVersion,
   });
 
+  const { data: providerData, refetch: refetchProvider } = useQuery({
+    queryKey: ["provider-health"],
+    queryFn: async () => (await apiClient.get<{ active_provider: string }>("/api/v1/copilot/provider-health")).data,
+  });
   const handleRefresh = () => {
+    refetchProvider();
     refetchHealth();
     refetchReady();
     refetchVersion();
@@ -58,7 +63,7 @@ export default function SystemHealthPage() {
   const isDatabaseHealthy = readyData?.components?.database === "ready";
   const isEngineHealthy = readyData?.components?.analysis_engine === "ready";
   const llmStatus = readyData?.components?.llm || "optional_offline";
-  const isGroqConfigured = llmStatus === "ready";
+  const isGroqConfigured = providerData?.active_provider === "groq";
 
   const copilotProviderMode = isGroqConfigured ? "GROQ ACCELERATED" : "EVIDENCE MODE (Deterministic Fallback)";
 
@@ -82,7 +87,7 @@ export default function SystemHealthPage() {
 
           <div className="flex items-center gap-3">
             <span className="text-xs text-[#6C7378] font-mono hidden md:inline">
-              CHECKED: {lastRefreshed.toLocaleTimeString()}
+              CHECKED: {lastRefreshed?.toLocaleTimeString() || "—"}
             </span>
             <button
               onClick={handleRefresh}
@@ -141,7 +146,7 @@ export default function SystemHealthPage() {
                       isDatabaseHealthy ? "bg-[#2E6B72]" : "bg-[#E8913C]"
                     }`}
                   />
-                  {isDatabaseHealthy ? "READY" : "STAGE VERIFIED"}
+                  {isDatabaseHealthy ? "READY" : "UNAVAILABLE"}
                 </span>
               </div>
               <span className="text-xs font-mono text-[#EDE7DC] block">
@@ -179,7 +184,7 @@ export default function SystemHealthPage() {
                 <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Audit Copilot</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#2E6B72]" />
-                  ONLINE
+                  {isBackendConnected ? "AVAILABLE" : "UNAVAILABLE"}
                 </span>
               </div>
               <span className="text-xs font-mono text-[#EDE7DC] block">
@@ -217,11 +222,11 @@ export default function SystemHealthPage() {
                 <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Deterministic Recovery</span>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40">
                   <span className="h-1.5 w-1.5 rounded-full bg-[#2E6B72]" />
-                  VERIFIED
+                  {readyData?.components?.recovery_store || "UNKNOWN"}
                 </span>
               </div>
               <span className="text-xs font-mono text-[#EDE7DC] block">
-                Zero-Loss Stage Snapshot Layer
+                Dataset-matched recovery snapshots
               </span>
             </div>
           </div>
@@ -241,7 +246,7 @@ export default function SystemHealthPage() {
               </div>
               <span className="text-[#6C7378] block text-[11px]">10 Codified Rules</span>
               <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
-                OPERATIONAL
+                {isBackendConnected && isEngineHealthy ? "AVAILABLE" : "UNAVAILABLE"}
               </span>
             </div>
 
@@ -250,9 +255,9 @@ export default function SystemHealthPage() {
                 <span className="font-bold text-[#EDE7DC]">Isolation Forest</span>
                 <CheckCircle2 className="h-3.5 w-3.5 text-[#2E6B72]" />
               </div>
-              <span className="text-[#6C7378] block text-[11px]">Scikit-Learn Model</span>
+              <span className="text-[#6C7378] block text-[11px]">Model {readyData?.ml?.model_version || "—"} / Schema {readyData?.ml?.feature_schema_version || "—"}</span>
               <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
-                OPERATIONAL
+                {isBackendConnected && isEngineHealthy ? "AVAILABLE" : "UNAVAILABLE"}
               </span>
             </div>
 
@@ -263,7 +268,7 @@ export default function SystemHealthPage() {
               </div>
               <span className="text-[#6C7378] block text-[11px]">Directed Cycles</span>
               <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
-                OPERATIONAL
+                {isBackendConnected && isEngineHealthy ? "AVAILABLE" : "UNAVAILABLE"}
               </span>
             </div>
 
@@ -272,9 +277,9 @@ export default function SystemHealthPage() {
                 <span className="font-bold text-[#EDE7DC]">GST Engine</span>
                 <CheckCircle2 className="h-3.5 w-3.5 text-[#2E6B72]" />
               </div>
-              <span className="text-[#6C7378] block text-[11px]">ITC Reconciliation</span>
+              <span className="text-[#6C7378] block text-[11px]">Ledger mismatch markers</span>
               <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
-                OPERATIONAL
+                {isBackendConnected && isEngineHealthy ? "AVAILABLE" : "UNAVAILABLE"}
               </span>
             </div>
           </div>
