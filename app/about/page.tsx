@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShieldCheck,
   Cpu,
@@ -273,9 +274,11 @@ export default function AboutPage() {
               >
                 <div>
                   <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-[rgba(237,231,220,0.2)] mx-auto mb-4 shadow-md group-hover:border-[#E8913C] transition-colors">
-                    <img
+                    <Image
                       src={member.image}
                       alt={member.name}
+                      width={96}
+                      height={96}
                       className="h-full w-full object-cover"
                     />
                   </div>
