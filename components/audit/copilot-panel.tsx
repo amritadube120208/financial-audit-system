@@ -189,7 +189,7 @@ export function CopilotPanel({ runId, activeFinding, isOpen, onClose }: CopilotP
                     : "bg-[#0A0C0E] text-[#EDE7DC] border border-[rgba(237,231,220,0.12)]"
                 }`}
               >
-                <p className="whitespace-pre-wrap leading-relaxed">{isUser ? m.content : m.answer}</p>
+                <p className="whitespace-pre-wrap leading-relaxed">{isUser ? m.content : (m.answer || m.content)}</p>
 
                 {!isUser && m.citations && m.citations.length > 0 && (
                   <div className="pt-2 border-t border-[rgba(237,231,220,0.1)] text-[10px] space-y-1 font-mono">
