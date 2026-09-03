@@ -24,6 +24,11 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
+export function getApiErrorCode(error: unknown): string | undefined {
+  if (!axios.isAxiosError(error)) return undefined;
+  return error.response?.data?.detail?.code || error.response?.data?.error?.code;
+}
+
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;

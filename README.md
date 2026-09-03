@@ -22,6 +22,13 @@ Open http://localhost:3000. API documentation is at http://127.0.0.1:8000/docs. 
 
 The browser uses same-origin API requests. Set **BACKEND_URL** during the frontend build when the backend is hosted separately. Keep GROQ_API_KEY on the backend; it is optional and the Copilot uses Evidence Mode when the provider is unavailable. Do not set a public browser API address unless you intentionally need a separate browser-facing API origin.
 
+## Branch deployment paths
+
+- `main` and `backend`: complete application; backend build context is repository root, frontend build context is `frontend/`.
+- `frontend`: standalone frontend; build context is repository root. Set `BACKEND_URL` to the deployed backend origin before building.
+
+Copilot requires an analyzed ledger. The active run is retained in the audit URL across refreshes; an expired session is renewed automatically. After a backend restart, upload and analyze the ledger again.
+
 ## Deployment
 
 ```sh

@@ -89,9 +89,15 @@ async def post_copilot_message(session_id: str, request: CopilotMessageRequest):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
             )
-        run_id = mem_session.get("run_id", "run_default")
+        run_id = mem_session.get("run_id")
     else:
         run_id = session.run_id
+
+    if not run_id or not stage_store.get_run_result(run_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "RUN_NOT_FOUND", "message": "This audit is no longer available. Upload and analyze the ledger again."},
+        )
 
     # 2. Save user message to durable database
     user_msg_id = f"msg_usr_{int(time.time()*1000)}"

@@ -307,3 +307,15 @@ async def test_15_safety_refusal():
             or "statutory" in ans_lower
             or "priority" in ans_lower
         )
+
+
+@pytest.mark.asyncio
+async def test_session_rejects_expired_audit(monkeypatch):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        created = await client.post("/api/v1/copilot/sessions", json={"run_id": "run_test_alpha"})
+        session_id = created.json()["session_id"]
+        monkeypatch.setattr(stage_store, "get_run_result", lambda run_id: None)
+        response = await client.post(f"/api/v1/copilot/sessions/{session_id}/messages", json={"message": "Summarize this audit"})
+        assert response.status_code == 404
+        assert response.json()["detail"]["code"] == "RUN_NOT_FOUND"
+        assert await copilot_repo.get_messages(session_id) == []

@@ -36,3 +36,7 @@ Local frontend: http://localhost:3000. API docs: http://127.0.0.1:8000/docs. The
 Deployment scope: one backend worker in a trusted environment. Ledger/run state is in memory and must be re-uploaded after a backend restart; Copilot sessions use SQLite. A public multi-user deployment needs an authenticated gateway and durable, access-controlled ledger storage. No cloud deployment has been performed.
 
 See README.md for the installation and deployment commands. The final commit SHA and verified remote status are supplied in the handoff message.
+
+## Copilot deployment follow-up
+
+Fixed disabled/connecting states, actionable missing-audit errors, one-time missing-session recovery, and active run URL retention across refresh. Copilot integration tests: 16 passed. Next production build: passed. Browser upload, refresh, Copilot reply, report, export and run isolation: passed with zero critical errors.

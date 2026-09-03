@@ -19,6 +19,10 @@ async def main(passes):
             await page.goto('http://localhost:3000', wait_until='networkidle')
             await expect(page.get_by_role('heading', name='No active audit')).to_be_visible()
             await page.get_by_role('link', name='START NEW AUDIT', exact=True).click()
+            await page.get_by_role('button', name='COPILOT', exact=True).click()
+            await expect(page.get_by_text('Upload a ledger and start analysis', exact=False)).to_be_visible()
+            await expect(page.get_by_role('button', name='Send message', exact=True)).to_be_disabled()
+            await page.get_by_title('Close Copilot Drawer').click()
             async with page.expect_response(lambda r: r.request.method == 'POST' and '/api/v1/datasets' in r.url) as up:
                 await page.locator('#file-upload').set_input_files(root / 'AuditGraph_Demo_SME_Ledger.xlsx')
             uploaded = await (await up.value).json()
@@ -28,6 +32,8 @@ async def main(passes):
             run = await (await run_resp.value).json()
             assert run['status'] == 'READY', run.get('degraded_reasons')
             await expect(page.get_by_text('Surfaced Findings', exact=False)).to_be_visible(timeout=30000)
+            await expect(page).to_have_url(re.compile(r'/audit\?run='))
+            await page.reload(wait_until='networkidle')
             await expect(page.locator('#transactions')).to_contain_text('RT-001')
             cycle = next(c for c in run['cases'] if c.get('graph_payload'))
             row = page.get_by_role('row').filter(has_text=cycle['title']).first

@@ -286,6 +286,7 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
     try {
       const run = await createAuditRun({ dataset_id: datasetInfo.dataset_id });
       setActiveRunId(run.run_id);
+      router.replace(`/audit?run=${encodeURIComponent(run.run_id)}`);
       setLastActiveRunId(run.run_id);
       addRecentRun({
         runId: run.run_id,
@@ -805,6 +806,7 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
         activeFinding={activeFinding}
         isOpen={isCopilotOpen}
         onClose={() => setCopilotOpen(false)}
+        onStartNewAudit={handleNewAudit}
       />
     </div>
   );
