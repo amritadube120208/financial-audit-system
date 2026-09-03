@@ -86,28 +86,32 @@ async def get_gst_reconciliation(run_id: str):
 
     return {
         "run_id": run_id,
-        "total_mismatches": 14,
-        "total_disallowed_itc_exposure": 142500.0,
+        "enabled": True,
+        "total_matched": 8940,
+        "total_mismatched": 14,
+        "total_discrepancy_inr": 142500.0,
         "items": [
             {
                 "invoice_number": "INV-1002",
                 "vendor_name": "VENDOR_Y09",
                 "gstin": "27AAACV9090K1Z5",
                 "books_amount": 490000.0,
-                "books_gst": 49000.0,
-                "gstr2b_gst": 0.0,
-                "variance": 49000.0,
-                "status": "MISSING IN GSTR-2B",
+                "gst_snapshot_amount": 0.0,
+                "difference": 490000.0,
+                "difference_pct": 100.0,
+                "status": "MISSING_IN_GST",
+                "tax_amount": 49000.0
             },
             {
                 "invoice_number": "INV-1008",
                 "vendor_name": "VENDOR_Z44",
                 "gstin": "27AAACZ4440L1Z8",
                 "books_amount": 250000.0,
-                "books_gst": 25000.0,
-                "gstr2b_gst": 12500.0,
-                "variance": 12500.0,
-                "status": "AMOUNT MISMATCH",
+                "gst_snapshot_amount": 125000.0,
+                "difference": 125000.0,
+                "difference_pct": 50.0,
+                "status": "MISMATCHED",
+                "tax_amount": 25000.0
             },
         ],
     }
