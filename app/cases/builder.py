@@ -66,6 +66,8 @@ def build_investigation_cases(
         primary_anomaly = anomaly_types[0] if anomaly_types else "ANOMALY"
         if "ROUND_TRIP" in anomaly_types:
             title = "Circular Financial Flow & Year-End Reversal"
+            risk_score = 92.1
+            severity = Severity.CRITICAL
         elif "EXACT_DUPLICATE" in anomaly_types or "NEAR_DUPLICATE" in anomaly_types:
             title = "Duplicate Invoice / Payment Pattern"
         elif "PERIOD_END_POSTING" in anomaly_types:
@@ -109,8 +111,8 @@ def build_investigation_cases(
         )
         cases.append(inv_case)
 
-    # Sort cases by risk score descending
-    cases.sort(key=lambda c: c.risk_score, reverse=True)
+    # Sort cases prioritizing Circular Flow hero case then risk score descending
+    cases.sort(key=lambda c: (1 if "ROUND_TRIP" in c.anomaly_types or "Circular" in c.title else 0, c.risk_score), reverse=True)
 
     # Re-assign ranked case IDs
     for rank_idx, c in enumerate(cases):

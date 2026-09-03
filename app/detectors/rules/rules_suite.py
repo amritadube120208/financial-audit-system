@@ -464,7 +464,7 @@ class RulesDetector(BaseDetector):
             # Frequency <= 0.3% of total ledger and material amount
             if freq <= 0.003 and abs(t.amount) >= materiality:
                 count += 1
-                raw_s = 0.70
+                raw_s = 0.90
 
                 evidence = [
                     EvidenceItem(

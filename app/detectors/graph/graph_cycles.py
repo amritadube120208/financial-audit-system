@@ -221,7 +221,7 @@ class GraphCycleDetector(BaseDetector):
                         transaction_ids=cycle_txns,
                         entity_ids=cycle,
                         raw_score=graph_score,
-                        normalized_score=graph_score,
+                        normalized_score=min(0.98, float(graph_score)),
                         severity=sev,
                         monetary_exposure=Decimal(str(max_amt)),
                         evidence=evidence,

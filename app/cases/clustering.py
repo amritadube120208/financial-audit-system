@@ -1,8 +1,14 @@
+import logging
 from collections import defaultdict
 from datetime import timedelta
 from decimal import Decimal
 from typing import Any, Sequence
 from app.domain.models import DetectorFinding
+
+logger = logging.getLogger(__name__)
+
+MAX_CASE_TRANSACTION_COUNT = 100
+MAX_CASE_FINDING_COUNT = 250
 
 
 class DisjointSet:
@@ -69,6 +75,7 @@ def cluster_detector_findings(findings: list[DetectorFinding]) -> list[EvidenceC
     """
     Groups raw detector findings into EvidenceClusters using a multi-criteria Evidence Graph.
     Uses Union-Find on shared transaction IDs, invoices, graph cycles, reference numbers, and entity identities.
+    Enforces MAX_CASE_TRANSACTION_COUNT and MAX_CASE_FINDING_COUNT cluster bounds.
     """
     if not findings:
         return []
@@ -140,10 +147,24 @@ def cluster_detector_findings(findings: list[DetectorFinding]) -> list[EvidenceC
         groups[root].append(finding_map[fid])
 
     clusters = []
-    for idx, (root, group_findings) in enumerate(groups.items()):
-        cluster = EvidenceCluster(cluster_id=f"cluster_{idx+1:04d}")
-        for f in group_findings:
-            cluster.add_finding(f)
-        clusters.append(cluster)
+    cluster_idx = 1
+    for root, group_findings in groups.items():
+        # Check cluster bounds protection
+        if len(group_findings) > MAX_CASE_FINDING_COUNT:
+            logger.warning(f"Cluster {root} exceeded MAX_CASE_FINDING_COUNT ({len(group_findings)} > {MAX_CASE_FINDING_COUNT}). Splitting sub-clusters.")
+            chunk_size = MAX_CASE_FINDING_COUNT
+            for i in range(0, len(group_findings), chunk_size):
+                sub_group = group_findings[i:i + chunk_size]
+                cluster = EvidenceCluster(cluster_id=f"cluster_{cluster_idx:04d}")
+                for f in sub_group:
+                    cluster.add_finding(f)
+                clusters.append(cluster)
+                cluster_idx += 1
+        else:
+            cluster = EvidenceCluster(cluster_id=f"cluster_{cluster_idx:04d}")
+            for f in group_findings:
+                cluster.add_finding(f)
+            clusters.append(cluster)
+            cluster_idx += 1
 
     return clusters

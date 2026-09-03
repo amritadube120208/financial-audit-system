@@ -117,7 +117,7 @@ class IsolationForestDetector(BaseDetector):
                     transaction_ids=[txn.transaction_id],
                     entity_ids=[txn.entity_id] if txn.entity_id else [],
                     raw_score=float(raw_scores[i]),
-                    normalized_score=float(score),
+                    normalized_score=min(0.85, float(score)),
                     severity=sev,
                     monetary_exposure=abs(txn.amount),
                     evidence=evidence,

@@ -3,7 +3,7 @@
   "pipeline_version": "1.0.0",
   "scoring_config_version": "1.0.0",
   "result_data": {
-    "run_id": "run_1788441977705",
+    "run_id": "run_1788443814665",
     "status": "READY",
     "analysis_mode": "full",
     "degraded_reasons": [],
@@ -13,11 +13,11 @@
     "critical_cases": 3,
     "high_cases": 0,
     "review_surface_reduction_pct": 0.0,
-    "duration_ms": 4.6,
+    "duration_ms": 6.0,
     "cases": [
       {
         "case_id": "case_inv_001",
-        "run_id": "run_1788441977705",
+        "run_id": "run_1788443814665",
         "title": "Year-End Expense Spike & Cutoff Anomaly",
         "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 99.0 (CRITICAL). Monetary Exposure: \u20b9495,000.00.",
         "risk_score": 99.0,
@@ -60,11 +60,11 @@
         "graph_payload": null,
         "monetary_exposure": 495000.0,
         "confidence": 0.65,
-        "created_at": "2026-09-03T13:26:17.710307"
+        "created_at": "2026-09-03T13:56:54.671802"
       },
       {
         "case_id": "case_inv_002",
-        "run_id": "run_1788441977705",
+        "run_id": "run_1788443814665",
         "title": "Year-End Expense Spike & Cutoff Anomaly",
         "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 98.0 (CRITICAL). Monetary Exposure: \u20b9490,000.00.",
         "risk_score": 98.0,
@@ -107,11 +107,11 @@
         "graph_payload": null,
         "monetary_exposure": 490000.0,
         "confidence": 0.65,
-        "created_at": "2026-09-03T13:26:17.710307"
+        "created_at": "2026-09-03T13:56:54.671802"
       },
       {
         "case_id": "case_inv_003",
-        "run_id": "run_1788441977705",
+        "run_id": "run_1788443814665",
         "title": "Year-End Expense Spike & Cutoff Anomaly",
         "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 97.5 (CRITICAL). Monetary Exposure: \u20b9487,500.00.",
         "risk_score": 97.5,
@@ -154,13 +154,13 @@
         "graph_payload": null,
         "monetary_exposure": 487500.0,
         "confidence": 0.65,
-        "created_at": "2026-09-03T13:26:17.710307"
+        "created_at": "2026-09-03T13:56:54.671802"
       }
     ],
     "findings": [
       {
         "finding_id": "rule_spike_run_17_0001",
-        "run_id": "run_1788441977705",
+        "run_id": "run_1788443814665",
         "detector_family": "RULES",
         "detector_name": "rules",
         "anomaly_type": "PERIOD_END_POSTING",
@@ -193,11 +193,11 @@
         "metadata": {
           "days_to_fy_end": 2
         },
-        "created_at": "2026-09-03T13:26:17.706866"
+        "created_at": "2026-09-03T13:56:54.667779"
       },
       {
         "finding_id": "rule_spike_run_17_0002",
-        "run_id": "run_1788441977705",
+        "run_id": "run_1788443814665",
         "detector_family": "RULES",
         "detector_name": "rules",
         "anomaly_type": "PERIOD_END_POSTING",
@@ -230,11 +230,11 @@
         "metadata": {
           "days_to_fy_end": 1
         },
-        "created_at": "2026-09-03T13:26:17.706866"
+        "created_at": "2026-09-03T13:56:54.667779"
       },
       {
         "finding_id": "rule_spike_run_17_0003",
-        "run_id": "run_1788441977705",
+        "run_id": "run_1788443814665",
         "detector_family": "RULES",
         "detector_name": "rules",
         "anomaly_type": "PERIOD_END_POSTING",
@@ -267,9 +267,9 @@
         "metadata": {
           "days_to_fy_end": 1
         },
-        "created_at": "2026-09-03T13:26:17.706866"
+        "created_at": "2026-09-03T13:56:54.667779"
       }
     ],
-    "created_at": "2026-09-03T13:26:17.710307"
+    "created_at": "2026-09-03T13:56:54.671802"
   }
 }
