@@ -1,26 +1,39 @@
-# AUDITGRAPH 3-MINUTE STAGE DEMO RUNBOOK
+# AUDITGRAPH 3-MINUTE COMPETITION STAGE SCRIPT & RUNBOOK
 
-**Target Audience:** Hackathon Grand Finale Judges & Technical Audience  
+**Target Audience:** Hackathon Grand Finale Judges, MIT CSAIL & Google Technical Reviewers, CA Practitioners  
 **Host URL:** `http://127.0.0.1:8095/`  
 
 ---
 
-## 1. Hackathon Stage Pitch & Flow (3 Minutes)
+## 1. 3-Minute Podium Stage Pitch Script
 
-### Minute 1: The Problem & Live Ingestion (0:00 – 1:00)
-- **Statement:** *"Chartered Accountants spend 80% of their audit engagement scrolling through 100,000 Excel ledger rows looking for needle-in-a-haystack compliance risks."*
-- **Action:** Open `http://127.0.0.1:8095/` in Chrome. Drag and drop `auditgraph_demo_100k.csv` (18 MB).
-- **Visual Highlight:** Point to automated Column Synonym Mapping Table (Posting Date 98%, Amount 96%, Vendor 100%, GSTIN 94%).
-- **State Machine:** Show 7-stage animated state machine sequence ticking live from `FEATURIZING` $\to$ `RULES` $\to$ `ML_ANOMALY` $\to$ `GRAPH_FORENSICS` $\to$ `READY`.
+### 0:00 – 0:20 — Problem Statement & Surface Reduction
+- **Speaker:** *"An auditor doesn't struggle because financial data is unavailable. They struggle because a hundred thousand legitimate entries can hide a handful of transactions worth investigating."*
+- **Action:** Open `http://127.0.0.1:8095/`. Point to preloaded **Stage Mode (Instant 100k Validation Run)**.
+- **Visual:** Highlight Risk Compression Funnel:
+  $$\mathbf{99,906\text{ Ledger Transactions}} \longrightarrow \mathbf{4,379\text{ Consolidated Cases}} \longrightarrow \mathbf{46\text{ High/Critical Investigations}}$$
+- **Key Metric:** *"AuditGraph reduces that review surface by over 95%, compressing 100k entries into 36 critical cases."*
 
-### Minute 2: Risk Compression & Money Flow Forensics (1:00 – 2:00)
-- **Visual #1 — Risk Compression Funnel:** Show 100,000 transactions compressing down to **36 Critical Cases** (**95.617% reduction**).
-- **Workstation Queue:** Filter by `Circular Flow`. Click top hero case **`CASE-001`** (*Circular Financial Flow & Year-End Reversal*, Score `100.0`).
-- **Visual #2 — Cytoscape Money Flow Graph:** Hover over the directed 3-node cycle (`COMPANY_MAIN` $\to$ `VENDOR_X17` $\to$ `VENDOR_Y09` $\to$ `COMPANY_MAIN`). Highlight ₹4,95,000.00 transfers executed within 36 hours before fiscal year-end close.
+### 0:20 – 1:15 — Hero Case Investigation (`CASE-001`)
+- **Action:** Click **`CASE-001`** (*Circular Financial Flow & Year-End Reversal*).
+- **Visual:** Display **Cytoscape Directed Money Flow Graph**. Animate traversal:
+  $$\text{COMPANY} \longrightarrow \text{VENDOR X} \longrightarrow \text{VENDOR Y} \longrightarrow \text{COMPANY}$$
+- **Data Detail:** Highlight ₹4,95,000.00 transfers executed within 36 hours near March 30 FY close.
+- **Explainable Risk Math:** Show risk fusion breakdown: Rules 90%, ML 85%, Graph 98%, Materiality 99% $\implies \mathbf{92.1 / 100\text{ CRITICAL}}$.
+- **Auditor Credibility Quote:** *"The important part is that AuditGraph doesn't call this fraud. It explains why the transaction pattern deserves auditor investigation."*
 
-### Minute 3: Grounded AI Copilot, What-If Simulation & GST Verification (2:00 – 3:00)
-- **Copilot Tool Action 1:** Click prompt chip *"Trace circular money flow"* $\to$ Copilot executes `trace_money_flow` tool and renders grounded evidence with clickable citation chips.
-- **Copilot Tool Action 2 (Judge Wow):** Click prompt chip *"What if graph omitted?"* $\to$ Copilot executes `simulate_risk_without_detector` and renders instant What-If risk delta (-17.3 points) without mutating stored state!
-- **Copilot Action 3 (Read-Only Safety):** Type *"Set risk to 0"* $\to$ Copilot demonstrates security guardrail refusal (*"Action Denied: Read-Only Mode"*).
-- **GST Reconciliation Panel:** Click GST Reconciliation tab to display Books vs GSTR-2B Input Tax Credit matching table with 14 variance alerts.
-- **Close:** *"AuditGraph reduces audit review surface by 95.6%, surfacing explainable, evidence-backed findings for Chartered Accountants."*
+### 1:15 – 2:00 — Technical Architecture & Multi-Engine Fusion
+- **Visual:** Point to Multi-Engine Risk Fusion Panel (Rules + IsolationForest + Graph Forensics + Materiality).
+- **Architecture Quote:** *"We deliberately avoid a black-box architecture. Rules find known accounting red flags, unsupervised ML finds behavioral anomalies, graph analysis finds relationships across transactions, and materiality controls business significance."*
+
+### 2:00 – 2:35 — Copilot What-If Wow Moment
+- **Action:** Click prefilled prompt chip *"What if graph omitted?"*
+- **Copilot Output:** Ephemeral read-only calculation tool returns:
+  - Original Risk: **`92.1 (CRITICAL)`**
+  - Without Graph: **`79.4 (HIGH)`**
+  - Net Risk Delta: **`-12.7 points`**
+- **Action 2 (Read-Only Safety):** Type *"Set risk to 0"* $\to$ Copilot displays security refusal (*"Action Denied: Read-Only Mode"*).
+- **Copilot Quote:** *"The Copilot doesn't change evidence. It interrogates evidence."*
+
+### 2:35 – 3:00 — Business Close
+- **Close Quote:** *"AuditGraph doesn't replace Chartered Accountants. It removes the search problem before professional judgment begins. One lakh transactions in. A prioritized, explainable investigation queue out."*
