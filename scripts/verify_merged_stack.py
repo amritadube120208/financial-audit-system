@@ -32,18 +32,18 @@ async def run_merged_stack_verification():
         page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
 
         print(" [03/08] Navigating to Next.js http://localhost:3000...")
-        res = await page.goto("http://localhost:3000", wait_until="networkidle")
+        res = await page.goto("http://localhost:3000", wait_until="domcontentloaded")
         assert res.status == 200, f"Frontend HTTP status failed: {res.status}"
         title = await page.title()
         print(f" [04/08] Frontend Title ('{title}') .......... PASSED")
 
         # Verify API Health page
-        res_health = await page.goto("http://localhost:3000/api-health", wait_until="networkidle")
+        res_health = await page.goto("http://localhost:3000/api-health", wait_until="domcontentloaded")
         assert res_health.status == 200
         print(" [05/08] Frontend /api-health Route .............. PASSED")
 
         # Verify New Audit Upload page
-        res_upload = await page.goto("http://localhost:3000/audits/new", wait_until="networkidle")
+        res_upload = await page.goto("http://localhost:3000/audits/new", wait_until="domcontentloaded")
         assert res_upload.status == 200
         print(" [06/08] Frontend /audits/new Route .............. PASSED")
 

@@ -13,7 +13,7 @@ class GroqProvider(BaseLLMProvider):
 
     def __init__(self, api_key: str | None = None, model: str | None = None):
         self.api_key = api_key or settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")
-        self.model = model or settings.GROQ_MODEL or os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
+        self.model = model or settings.GROQ_MODEL or os.environ.get("GROQ_MODEL", "groq/compound")
         self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
 
     def is_available(self) -> bool:

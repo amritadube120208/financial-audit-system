@@ -111,3 +111,19 @@ async def get_gst_reconciliation(run_id: str):
             },
         ],
     }
+
+
+@router.get("/{run_id}/transactions")
+async def get_audit_run_transactions(run_id: str, limit: int = 25, offset: int = 0):
+    """Retrieve canonical transactions for audit run."""
+    result = stage_store.get_run_result(run_id)
+    dataset_id = result.get("dataset_id") if result else "ds_demo_100k"
+    txs = stage_store.get_transactions_for_dataset(dataset_id)
+    sliced = txs[offset : offset + limit]
+    return {
+        "run_id": run_id,
+        "total": len(txs),
+        "limit": limit,
+        "offset": offset,
+        "items": [t.model_dump() for t in sliced],
+    }
