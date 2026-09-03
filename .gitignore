@@ -11,3 +11,10 @@ build/
 htmlcov/
 data/*.csv
 !data/demo/
+
+# Node & Next.js
+node_modules/
+apps/web/node_modules/
+.next/
+apps/web/.next/
+_backup_backend/

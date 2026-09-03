@@ -5,6 +5,7 @@ router = APIRouter(tags=["health"])
 
 
 @router.get("/healthz")
+@router.get("/api/v1/health")
 async def healthz():
     return {"status": "ok", "service": "auditgraph", "version": settings.PIPELINE_VERSION}
 

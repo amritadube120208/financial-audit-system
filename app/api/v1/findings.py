@@ -23,6 +23,7 @@ async def get_audit_run_findings(run_id: str):
 
 
 @router.get("/findings/{finding_id}")
+@router.get("/investigations/{finding_id}")
 async def get_finding(finding_id: str):
     """Retrieve individual investigation case by ID."""
     for run_id, result in stage_store._runs.items():
@@ -37,6 +38,7 @@ async def get_finding(finding_id: str):
 
 
 @router.get("/findings/{finding_id}/graph")
+@router.get("/investigations/{finding_id}/graph")
 async def get_finding_graph(finding_id: str):
     """Retrieve Cytoscape graph payload for investigation case."""
     finding = await get_finding(finding_id)

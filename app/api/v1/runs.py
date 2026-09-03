@@ -74,6 +74,7 @@ async def get_audit_run_summary(run_id: str):
 
 
 @router.get("/{run_id}/gst-reconciliation")
+@router.get("/{run_id}/gst")
 async def get_gst_reconciliation(run_id: str):
     """Retrieve Purchase Register vs GSTR-2B Input Tax Credit reconciliation items."""
     result = stage_store.get_run_result(run_id)
