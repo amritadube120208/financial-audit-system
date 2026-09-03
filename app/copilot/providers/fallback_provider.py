@@ -23,11 +23,19 @@ class DeterministicFallbackProvider(BaseLLMProvider):
 
         # Extract primary case info from tool results
         case_info = None
+        sim_res = None
+        proc_res = None
+
         for t in tool_results:
+            tool_name = t.get("tool_name")
             res = t.get("result", {})
-            if isinstance(res, dict) and "case_id" in res:
-                case_info = res
-                break
+            if isinstance(res, dict):
+                if "case_id" in res and not case_info:
+                    case_info = res
+                if tool_name == "simulate_risk_without_detector":
+                    sim_res = res
+                if tool_name == "get_recommended_audit_procedures":
+                    proc_res = res
 
         case_id = case_info.get("case_id", "case_inv_001") if case_info else "case_inv_001"
         title = case_info.get("title", "Circular Financial Flow & Year-End Reversal") if case_info else "Circular Financial Flow & Year-End Reversal"
@@ -51,7 +59,39 @@ class DeterministicFallbackProvider(BaseLLMProvider):
                 f"Current Risk Score for **{case_id}** remains **{score:.1f} ({sev})** based on multi-engine evidence."
             )
 
-        # Intent 3: Money Flow Tracing
+        # Intent 3: What-If Risk Simulation
+        elif "what if" in msg_lower or "without" in msg_lower or "simulate" in msg_lower or "exclude" in msg_lower:
+            if sim_res:
+                answer = (
+                    f"**What-If Risk Simulation (Read-Only Analysis):**\n"
+                    f"• **Excluded Detector:** {sim_res.get('excluded_detector')}\n"
+                    f"• **Original Stored Score:** {sim_res.get('original_score'):.1f} ({sev})\n"
+                    f"• **Simulated Score:** **{sim_res.get('simulated_score'):.1f}**\n"
+                    f"• **Net Risk Delta:** **{sim_res.get('delta_score'):+.1f} points**\n"
+                    f"• **Impact Summary:** {sim_res.get('impact_summary')}"
+                )
+            else:
+                answer = f"Excluding GRAPH detector changes risk score from 100.0 to 82.7 (-17.3 points). Stored case score remains unchanged."
+
+        # Intent 4: Recommended Audit Procedures
+        elif "procedure" in msg_lower or "step" in msg_lower or "checklist" in msg_lower or "next" in msg_lower:
+            if proc_res:
+                procs = proc_res.get("recommended_procedures", [])
+                lines = [f"**Recommended Audit Procedures for {case_id}:**"]
+                for p in procs:
+                    lines.append(f"• **{p.get('title')}:**")
+                    for s in p.get("steps", []):
+                        lines.append(f"  - {s}")
+                answer = "\n".join(lines)
+            else:
+                answer = (
+                    f"**Recommended Audit Procedures for {case_id}:**\n"
+                    f"• **1. Bank Statement Inspection:** Verify bank statements for 72h window around March 30.\n"
+                    f"• **2. Counterparty Confirmation:** Request written balance confirmation letters from VENDOR_X17 and VENDOR_Y09.\n"
+                    f"• **3. Cutoff Testing:** Test March 28–31 receiving notes for unrecorded liabilities."
+                )
+
+        # Intent 5: Money Flow Tracing
         elif "trace" in msg_lower or "money" in msg_lower or "flow" in msg_lower or "graph" in msg_lower or "circular" in msg_lower:
             answer = (
                 f"**Money Flow Graph Evidence for {case_id}:**\n"
@@ -61,7 +101,7 @@ class DeterministicFallbackProvider(BaseLLMProvider):
                 f"• **Auditor Focus:** Verify underlying purchase orders and bank clearing receipts for VENDOR_X17 and VENDOR_Y09."
             )
 
-        # Intent 4: GST Reconciliation
+        # Intent 6: GST Reconciliation
         elif "gst" in msg_lower or "tax" in msg_lower or "gstr" in msg_lower or "variance" in msg_lower:
             answer = (
                 f"**GST-to-Book Reconciliation Summary for Run {run_id}:**\n"
@@ -70,16 +110,7 @@ class DeterministicFallbackProvider(BaseLLMProvider):
                 f"• **Exposure:** ₹1,42,500.00 total un-reconciled tax credit at risk of disallowance under Section 16(2)(aa)."
             )
 
-        # Intent 5: Year-End / Period-End Postings
-        elif "year end" in msg_lower or "march" in msg_lower or "period end" in msg_lower or "cutoff" in msg_lower:
-            answer = (
-                f"**Period-End Expense Cutoff Analysis:**\n"
-                f"• **Posting Intensity:** 42% of total high-value ledger transfers occurred in the final 3 days of FY26 (March 29–31).\n"
-                f"• **Key Case:** **{case_id}** involves ₹4,95,000.00 posted on March 30 with document date March 27.\n"
-                f"• **Auditor Focus:** Inspect goods receipt notes (GRNs) to ensure liabilities were recorded in the correct accounting period."
-            )
-
-        # Intent 6: Vendor Comparison / Entity Profile
+        # Intent 7: Vendor Comparison / Entity Profile
         elif "vendor" in msg_lower or "entity" in msg_lower or "compare" in msg_lower or "rarity" in msg_lower:
             answer = (
                 f"**Entity Frequency & Rarity Profile:**\n"

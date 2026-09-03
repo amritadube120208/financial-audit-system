@@ -75,20 +75,33 @@ class CopilotService:
             if isinstance(trace_res, dict) and trace_res.get("case_id"):
                 citations.append(CopilotCitation(source_type="graph_cycle", source_id=trace_res["case_id"], field="cycle_path", value="3-Node Cycle"))
 
-        # Intent 3: GST Mismatches
+        # Intent 3: What-If Risk Simulation
+        if "what if" in msg_lower or "without" in msg_lower or "simulate" in msg_lower or "exclude" in msg_lower:
+            excluded = "GRAPH" if "graph" in msg_lower else ("RULES" if "rule" in msg_lower else "ML")
+            sim_res = copilot_tools.simulate_risk_without_detector(run_id=run_id, case_id=target_case_id, excluded_detector=excluded)
+            tool_results.append({"tool_name": "simulate_risk_without_detector", "result": sim_res})
+            used_tools.append("simulate_risk_without_detector")
+            citations.append(CopilotCitation(source_type="what_if_simulation", source_id=target_case_id, field="simulated_score", value=sim_res.get("simulated_score")))
+
+        # Intent 4: Recommended Audit Procedures
+        if "procedure" in msg_lower or "step" in msg_lower or "checklist" in msg_lower or "audit next" in msg_lower:
+            proc_res = copilot_tools.get_recommended_audit_procedures(run_id=run_id, case_id=target_case_id)
+            tool_results.append({"tool_name": "get_recommended_audit_procedures", "result": proc_res})
+            used_tools.append("get_recommended_audit_procedures")
+            citations.append(CopilotCitation(source_type="audit_checklist", source_id=target_case_id, field="procedures_count", value=len(proc_res.get("recommended_procedures", []))))
+
+        # Intent 5: GST Mismatches
         if "gst" in msg_lower or "tax" in msg_lower or "gstr" in msg_lower or "variance" in msg_lower:
             gst_res = copilot_tools.get_gst_mismatches(run_id=run_id)
             tool_results.append({"tool_name": "get_gst_mismatches", "result": gst_res})
             used_tools.append("get_gst_mismatches")
-
             citations.append(CopilotCitation(source_type="gst_reconciliation", source_id="gstr_2b_var", field="mismatch_count", value=14))
 
-        # Intent 4: Entity Comparison
+        # Intent 6: Entity Comparison
         if "vendor" in msg_lower or "entity" in msg_lower or "compare" in msg_lower:
             entity_res = copilot_tools.get_entity_profile(run_id=run_id, entity_id="VENDOR_X17")
             tool_results.append({"tool_name": "get_entity_profile", "result": entity_res})
             used_tools.append("get_entity_profile")
-
             citations.append(CopilotCitation(source_type="entity", source_id="VENDOR_X17", field="rarity", value="0.27%"))
 
         # Ensure default tool executed if empty
@@ -130,7 +143,8 @@ class CopilotService:
         suggested_actions = [
             CopilotFollowUpAction(action_id="why_crit", label="Why is CASE-001 critical?", case_id=target_case_id),
             CopilotFollowUpAction(action_id="trace_flow", label="Trace circular money flow", case_id=target_case_id),
-            CopilotFollowUpAction(action_id="gst_var", label="Show GST Mismatches", case_id=target_case_id),
+            CopilotFollowUpAction(action_id="what_if", label="What if graph omitted?", case_id=target_case_id),
+            CopilotFollowUpAction(action_id="audit_proc", label="Recommended audit steps", case_id=target_case_id),
         ]
 
         used_tools_unique = list(dict.fromkeys(used_tools))
