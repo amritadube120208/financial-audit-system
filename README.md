@@ -9,7 +9,7 @@ Keep provider API keys on the backend only.
 The main and backend branches contain the complete application, backend Dockerfile,
 model artifacts, and compose.yaml. Their frontend lives in frontend/.
 
-Upload and analyze a ledger before using Copilot. Evidence Mode works without a
+Copilot answers setup questions immediately. Upload and analyze a ledger for answers about your audit. Evidence Mode works without a
 provider key. Audit results are held in backend memory, so backend restarts require
 re-uploading the ledger. Deploy behind an authenticated HTTPS gateway; built-in
 multi-user authorization is not provided.
