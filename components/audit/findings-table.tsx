@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Filter, AlertTriangle, ShieldAlert, ArrowUpDown, ChevronRight, Eye } from "lucide-react";
+import { Search, Eye, ArrowUpRight } from "lucide-react";
 import type { FindingItem, Severity } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 
@@ -11,13 +11,6 @@ interface FindingsTableProps {
   onSelectFinding: (findingId: string) => void;
   selectedFindingId: string | null;
 }
-
-const SEVERITY_BADGES: Record<Severity, string> = {
-  critical: "bg-rose-500/10 text-rose-400 border-rose-500/30",
-  high: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-  medium: "bg-yellow-500/10 text-yellow-400 border-yellow-500/30",
-  low: "bg-blue-500/10 text-blue-400 border-blue-500/30",
-};
 
 export function FindingsTable({
   findings,
@@ -43,30 +36,32 @@ export function FindingsTable({
   });
 
   return (
-    <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden my-6">
+    <div className="border border-[rgba(237,231,220,0.13)] bg-[#101317] rounded-sm overflow-hidden my-6">
       {/* Header & Filter Controls */}
-      <div className="p-5 border-b border-border/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 border-b border-[rgba(237,231,220,0.1)] bg-[#0A0C0E] flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-            <ShieldAlert className="h-4 w-4 text-emerald-400" />
-            Ranked Investigation Findings ({filtered.length})
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E8913C]" />
+            <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-[#6C7378]">
+              INVESTIGATION QUEUE {"//"} RANKED TRIAGE
+            </span>
+          </div>
+          <h3 className="font-display font-bold text-base sm:text-lg text-[#EDE7DC] mt-0.5 tracking-tight">
+            Surfaced Findings ({filtered.length})
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Surfaced cases ordered by normalized multi-engine risk score and materiality exposure.
-          </p>
         </div>
 
         {/* Filters Toolbar */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Search */}
           <div className="relative">
-            <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6C7378]" />
             <input
               type="text"
-              placeholder="Search findings, entities..."
+              placeholder="Search case or vendor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-8 pl-8 pr-3 rounded-lg border border-border bg-secondary/50 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-emerald-500"
+              className="h-8 pl-8 pr-2.5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] text-xs text-[#EDE7DC] placeholder:text-[#6C7378] focus:outline-none focus:border-[#E8913C]"
             />
           </div>
 
@@ -74,20 +69,20 @@ export function FindingsTable({
           <select
             value={selectedSeverity}
             onChange={(e) => setSelectedSeverity(e.target.value)}
-            className="h-8 px-2.5 rounded-lg border border-border bg-secondary/50 text-xs text-foreground focus:outline-none focus:border-emerald-500"
+            className="h-8 px-2.5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] text-xs text-[#EDE7DC] focus:outline-none focus:border-[#E8913C]"
           >
             <option value="all">All Severities</option>
-            <option value="critical">Critical Only</option>
-            <option value="high">High Only</option>
-            <option value="medium">Medium Only</option>
-            <option value="low">Low Only</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
           </select>
 
           {/* Min Risk Filter */}
           <select
             value={minRisk}
             onChange={(e) => setMinRisk(Number(e.target.value))}
-            className="h-8 px-2.5 rounded-lg border border-border bg-secondary/50 text-xs text-foreground focus:outline-none focus:border-emerald-500"
+            className="h-8 px-2.5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] text-xs text-[#EDE7DC] focus:outline-none focus:border-[#E8913C]"
           >
             <option value="0">All Risk Scores</option>
             <option value="50">Risk &gt;= 50</option>
@@ -97,98 +92,103 @@ export function FindingsTable({
         </div>
       </div>
 
-      {/* Table Content */}
-      <div className="overflow-x-auto">
+      {/* Desktop Multi-column Table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-secondary/40 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border/60">
+          <thead className="bg-[#0A0C0E] text-[#6C7378] uppercase text-[10.5px] tracking-[0.14em] border-b border-[rgba(237,231,220,0.1)] font-mono">
             <tr>
-              <th className="py-3 px-4 font-semibold">Severity</th>
-              <th className="py-3 px-4 font-semibold">Risk</th>
-              <th className="py-3 px-4 font-semibold">Investigation Title</th>
-              <th className="py-3 px-4 font-semibold">Primary Entity</th>
-              <th className="py-3 px-4 font-semibold">Exposure</th>
-              <th className="py-3 px-4 font-semibold">Txns</th>
-              <th className="py-3 px-4 font-semibold">Detector</th>
-              <th className="py-3 px-4 font-semibold text-right">Action</th>
+              <th className="py-3 px-4 font-normal">Severity</th>
+              <th className="py-3 px-4 font-normal">Risk</th>
+              <th className="py-3 px-4 font-normal">Investigation Title</th>
+              <th className="py-3 px-4 font-normal">Primary Entity</th>
+              <th className="py-3 px-4 font-normal">Exposure</th>
+              <th className="py-3 px-4 font-normal">Txns</th>
+              <th className="py-3 px-4 font-normal">Detector Family</th>
+              <th className="py-3 px-4 font-normal text-right">Action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/40">
+          <tbody className="divide-y divide-[rgba(237,231,220,0.08)] font-body">
             {isLoading ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="h-4 w-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                <td colSpan={8} className="py-10 text-center text-[#9EA5A8]">
+                  <div className="flex items-center justify-center gap-2 font-mono text-xs">
+                    <span className="h-3.5 w-3.5 border-2 border-[#E8913C] border-t-transparent rounded-full animate-spin" />
                     <span>Loading prioritized investigations...</span>
                   </div>
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                  No suspicious findings match the current filter criteria.
+                <td colSpan={8} className="py-10 text-center text-[#6C7378] font-mono text-xs">
+                  NO FINDINGS MATCH THE CURRENT CRITERIA.
                 </td>
               </tr>
             ) : (
               filtered.map((f) => {
                 const isSelected = selectedFindingId === f.finding_id;
-                const badge = SEVERITY_BADGES[f.severity] || SEVERITY_BADGES.medium;
 
                 return (
                   <tr
                     key={f.finding_id}
                     onClick={() => onSelectFinding(f.finding_id)}
-                    className={`cursor-pointer transition-colors ${
+                    className={`cursor-pointer transition-colors duration-150 ${
                       isSelected
-                        ? "bg-emerald-500/10 hover:bg-emerald-500/15"
-                        : "hover:bg-secondary/30"
+                        ? "bg-[#0A0C0E] border-l-2 border-l-[#E8913C]"
+                        : "hover:bg-[#0A0C0E]/60"
                     }`}
                   >
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border ${badge}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border ${
+                          f.severity === "critical"
+                            ? "text-[#E8913C] border-[#E8913C]/40 bg-[#E8913C]/10"
+                            : f.severity === "high"
+                            ? "text-[#EDE7DC] border-[rgba(237,231,220,0.25)] bg-[#0A0C0E]"
+                            : "text-[#9EA5A8] border-[rgba(237,231,220,0.12)] bg-[#0A0C0E]"
+                        }`}
                       >
                         {f.severity}
                       </span>
                     </td>
-                    <td className="py-3 px-4 font-mono font-bold whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-mono font-bold whitespace-nowrap">
                       <span
                         className={
                           f.risk_score >= 80
-                            ? "text-rose-400"
+                            ? "text-[#E8913C]"
                             : f.risk_score >= 60
-                            ? "text-amber-400"
-                            : "text-emerald-400"
+                            ? "text-[#EDE7DC]"
+                            : "text-[#2E6B72]"
                         }
                       >
                         {f.risk_score}
                       </span>
-                      <span className="text-muted-foreground text-[10px]">/100</span>
+                      <span className="text-[#6C7378] text-[10px]">/100</span>
                     </td>
-                    <td className="py-3 px-4 max-w-xs truncate font-medium text-foreground">
+                    <td className="py-3.5 px-4 font-display font-semibold text-[#EDE7DC] max-w-xs truncate">
                       {f.title}
                     </td>
-                    <td className="py-3 px-4 font-mono text-muted-foreground truncate max-w-[120px]">
+                    <td className="py-3.5 px-4 font-mono text-[#9EA5A8] truncate max-w-[140px]">
                       {f.primary_entity || "-"}
                     </td>
-                    <td className="py-3 px-4 font-mono font-semibold text-foreground whitespace-nowrap">
+                    <td className="py-3.5 px-4 font-mono font-bold text-[#EDE7DC] whitespace-nowrap">
                       {formatINR(f.monetary_exposure)}
                     </td>
-                    <td className="py-3 px-4 font-mono text-muted-foreground">
+                    <td className="py-3.5 px-4 font-mono text-[#9EA5A8]">
                       {f.transaction_count}
                     </td>
-                    <td className="py-3 px-4 font-mono text-muted-foreground text-[11px] capitalize">
+                    <td className="py-3.5 px-4 font-mono text-[#6C7378] text-[11px] uppercase">
                       {f.detector_family}
                     </td>
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           onSelectFinding(f.finding_id);
                         }}
-                        className="inline-flex items-center gap-1 rounded bg-secondary hover:bg-secondary/80 text-foreground px-2.5 py-1 text-[11px] font-medium transition-all"
+                        className="inline-flex items-center gap-1 border border-[rgba(237,231,220,0.2)] bg-[#0A0C0E] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] px-2.5 py-1 text-xs font-mono uppercase tracking-[0.1em] transition-colors rounded-sm"
                       >
                         <Eye className="h-3 w-3" />
-                        Inspect
+                        INVESTIGATE
                       </button>
                     </td>
                   </tr>
@@ -197,6 +197,35 @@ export function FindingsTable({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Mobile Two-Column Collapsed Layout (Prevents Horizontal Overflow) */}
+      <div className="md:hidden divide-y divide-[rgba(237,231,220,0.1)]">
+        {filtered.map((f) => (
+          <div
+            key={f.finding_id}
+            onClick={() => onSelectFinding(f.finding_id)}
+            className="p-4 space-y-2 hover:bg-[#0A0C0E]/50 cursor-pointer"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-mono uppercase tracking-[0.12em] text-[#E8913C]">
+                {f.severity} {"//"} RISK {f.risk_score}/100
+              </span>
+              <span className="font-mono text-xs font-bold text-[#EDE7DC]">
+                {formatINR(f.monetary_exposure)}
+              </span>
+            </div>
+            <h4 className="font-display font-semibold text-sm text-[#EDE7DC]">
+              {f.title}
+            </h4>
+            <div className="flex items-center justify-between text-[11px] font-mono text-[#9EA5A8] pt-1">
+              <span>{f.primary_entity || "Multiple Counterparties"}</span>
+              <span className="text-[#E8913C] flex items-center gap-0.5">
+                DETAILS <ArrowUpRight className="h-3 w-3" />
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

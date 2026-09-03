@@ -1,122 +1,127 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
-import { ShieldCheck, Activity, Info, FileText, Database, ArrowRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuditContextStore } from "@/stores/audit-context-store";
+import { getHealthz } from "@/lib/api";
 
 export function Header() {
   const pathname = usePathname();
-  const params = useParams();
-  const { lastActiveRunId } = useAuditContextStore();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Active runId from route params or fallback to store
-  const currentRunId = (params?.runId as string) || lastActiveRunId;
+  // Live health probe for backend status dot
+  const { data: healthData } = useQuery({
+    queryKey: ["header-health"],
+    queryFn: getHealthz,
+    refetchInterval: 15000,
+  });
 
-  const auditHref = currentRunId ? `/audit/${currentRunId}` : "/audit";
-  const transactionHref = currentRunId
-    ? `/audit/${currentRunId}/transactions`
-    : "/audit/transactions";
+  const isOnline = healthData?.status === "ok" || healthData?.status === "healthy";
 
   const navItems = [
-    { label: "Home", href: "/", icon: FileText, exact: true },
-    {
-      label: "Audit",
-      href: auditHref,
-      active: pathname.startsWith("/audit") && !pathname.includes("/transactions"),
-      badge: currentRunId ? currentRunId.slice(0, 8) : undefined,
-    },
-    {
-      label: "Transaction",
-      href: transactionHref,
-      active: pathname.includes("/transactions"),
-    },
-    {
-      label: "System Health",
-      href: "/system-health",
-      icon: Activity,
-      active: pathname === "/system-health",
-    },
-    {
-      label: "About",
-      href: "/about",
-      icon: Info,
-      active: pathname === "/about",
-    },
+    { label: "HOME", href: "/" },
+    { label: "AUDIT", href: "/audit", active: pathname.startsWith("/audit") },
+    { label: "ABOUT", href: "/about", active: pathname === "/about" },
+    { label: "SYSTEM HEALTH", href: "/system-health", active: pathname === "/system-health" },
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Brand */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 group-hover:bg-emerald-500/20 transition-colors">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-base tracking-tight text-foreground flex items-center gap-1.5">
-                AuditGraph
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                  SME Forensic
-                </span>
-              </span>
-              <span className="text-[11px] text-muted-foreground hidden sm:inline">
-                Explainable Anomaly Triage
-              </span>
-            </div>
-          </Link>
-        </div>
+    <header className="fixed top-0 left-0 right-0 z-50 h-[58px] bg-[#0A0C0E]/85 backdrop-blur-[14px] border-b border-[rgba(237,231,220,0.13)]">
+      <div className="container mx-auto h-full max-w-7xl flex items-center justify-between px-4 sm:px-6">
+        {/* Project Wordmark with Amber Period */}
+        <Link href="/" className="flex items-center gap-2 group">
+          <span className="font-display font-extrabold text-base sm:text-lg tracking-[-0.03em] text-[#EDE7DC] flex items-center">
+            AUDITGRAPH
+            <span className="text-[#E8913C] ml-0.5 animate-pulse">.</span>
+          </span>
+          <span className="hidden sm:inline-block text-[10px] font-mono uppercase tracking-[0.14em] text-[#6C7378] px-1.5 py-0.5 border border-[rgba(237,231,220,0.1)] rounded-sm">
+            STAGE 01
+          </span>
+        </Link>
 
-        {/* Primary Navigation — EXACT ORDER: Home -> Audit -> Transaction -> System Health -> About */}
-        <nav className="flex items-center gap-1 sm:gap-1.5">
+        {/* Center Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-7 text-[11.5px] uppercase tracking-[0.14em] font-body font-medium">
           {navItems.map((item) => {
             const isActive =
               item.active !== undefined
                 ? item.active
-                : item.exact
-                ? pathname === item.href
-                : pathname.startsWith(item.href);
+                : pathname === item.href;
 
             return (
               <Link
                 key={item.label}
                 href={item.href}
                 className={cn(
-                  "px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5",
+                  "relative py-1 transition-colors duration-200",
                   isActive
-                    ? "bg-secondary text-foreground shadow-sm border border-border"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                    ? "text-[#EDE7DC] font-semibold"
+                    : "text-[#9EA5A8] hover:text-[#EDE7DC]"
                 )}
               >
                 {item.label}
-                {item.badge && (
-                  <span className="hidden md:inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">
-                    {item.badge}
-                  </span>
+                {isActive && (
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-[1.5px] bg-[#E8913C]" />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        {/* Right Status / Action */}
-        <div className="hidden lg:flex items-center gap-3">
-          {currentRunId ? (
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/5 text-xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-muted-foreground">Active Run:</span>
-              <span className="font-mono text-emerald-300">{currentRunId.slice(0, 10)}...</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full border border-border bg-secondary/40 text-xs text-muted-foreground">
-              <span className="h-2 w-2 rounded-full bg-slate-500" />
-              <span>Ready for Upload</span>
-            </div>
-          )}
+        {/* Right Controls: Status & Compact Pill CTA */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Subtle Live Dot */}
+          <div className="hidden sm:flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.1em] text-[#9EA5A8]">
+            <span
+              className={cn(
+                "h-1.5 w-1.5 rounded-full",
+                isOnline ? "bg-[#2E6B72] shadow-[0_0_8px_#2E6B72]" : "bg-[#E8913C]"
+              )}
+            />
+            <span className="hidden lg:inline">{isOnline ? "ONLINE" : "OFFLINE"}</span>
+          </div>
+
+          {/* Compact Pill Primary Action */}
+          <Link
+            href="/audit"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-full border border-[rgba(237,231,220,0.2)] bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] text-[11px] uppercase tracking-[0.12em] font-body font-semibold transition-all duration-200"
+          >
+            <span>LAUNCH AUDIT</span>
+            <ArrowUpRight className="h-3 w-3" />
+          </Link>
+
+          {/* Mobile Hamburger Toggle */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-1.5 text-[#9EA5A8] hover:text-[#EDE7DC] transition-colors"
+            aria-label="Toggle Menu"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileOpen && (
+        <div className="md:hidden absolute top-[58px] left-0 right-0 bg-[#0A0C0E]/95 border-b border-[rgba(237,231,220,0.13)] backdrop-blur-xl p-6 flex flex-col gap-4">
+          {navItems.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className="text-xs uppercase tracking-[0.15em] font-body text-[#EDE7DC] hover:text-[#E8913C] py-2 border-b border-[rgba(237,231,220,0.06)]"
+            >
+              {item.label}
+            </Link>
+          ))}
+          <div className="pt-2 flex items-center justify-between text-[11px] font-mono text-[#6C7378]">
+            <span>SYSTEM STATE</span>
+            <span className="text-[#2E6B72]">{isOnline ? "● ONLINE" : "● OFFLINE"}</span>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

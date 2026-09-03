@@ -2,61 +2,146 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
+:root {
+  /* MASTER DESIGN TOKENS */
+  --bg: #0A0C0E;
+  --bg-secondary: #101317;
+  --ink: #EDE7DC;
+  --ink-secondary: #9EA5A8;
+  --muted: #6C7378;
+  --amber: #E8913C;
+  --teal: #2E6B72;
+  --hairline: rgba(237, 231, 220, 0.13);
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+  /* Tailwind HSL Mapping */
+  --background: 216 17% 5%;
+  --foreground: 41 27% 90%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+  --card: 214 17% 8%;
+  --card-foreground: 41 27% 90%;
 
-    --primary: 160 84% 39%;
-    --primary-foreground: 222 47% 7%;
+  --popover: 214 17% 8%;
+  --popover-foreground: 41 27% 90%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+  --primary: 29 80% 57%;
+  --primary-foreground: 216 17% 5%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+  --secondary: 187 42% 31%;
+  --secondary-foreground: 41 27% 90%;
 
-    --accent: 199 89% 48%;
-    --accent-foreground: 210 40% 98%;
+  --muted: 214 17% 12%;
+  --muted-foreground: 198 6% 64%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+  --accent: 214 17% 12%;
+  --accent-foreground: 41 27% 90%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 160 84% 39%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
-  }
+  --border: 214 17% 15%;
+  --input: 214 17% 15%;
+  --ring: 29 80% 57%;
+
+  --radius: 0.25rem;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: rgba(237, 231, 220, 0.13);
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-emerald-500/20 selection:text-emerald-300 min-h-screen flex flex-col font-sans;
+    background-color: #0A0C0E;
+    color: #EDE7DC;
+    font-family: var(--font-body), sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display), sans-serif;
+    letter-spacing: -0.03em;
   }
 }
 
-/* Custom scrollbar for data tables */
+/* Editorial & Cinematic Utilities */
+.font-display {
+  font-family: var(--font-display), sans-serif;
+}
+
+.font-body {
+  font-family: var(--font-body), sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), monospace;
+}
+
+.stroke-numeral {
+  -webkit-text-stroke: 1.5px rgba(237, 231, 220, 0.22);
+  color: transparent;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+  line-height: 0.9;
+}
+
+.stroke-numeral-solid {
+  -webkit-text-stroke: 1px rgba(237, 231, 220, 0.4);
+  color: #0A0C0E;
+  font-family: var(--font-display), sans-serif;
+  font-weight: 800;
+}
+
+.editorial-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-family: var(--font-body), sans-serif;
+  color: #9EA5A8;
+}
+
+.hairline-b {
+  border-bottom: 1px solid rgba(237, 231, 220, 0.13);
+}
+
+.hairline-t {
+  border-top: 1px solid rgba(237, 231, 220, 0.13);
+}
+
+.hairline-l {
+  border-left: 1px solid rgba(237, 231, 220, 0.13);
+}
+
+.hairline-r {
+  border-right: 1px solid rgba(237, 231, 220, 0.13);
+}
+
+.hairline-border {
+  border: 1px solid rgba(237, 231, 220, 0.13);
+}
+
+/* Custom minimal scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: #0A0C0E;
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 3px;
+  background: rgba(237, 231, 220, 0.18);
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: #E8913C;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

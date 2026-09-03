@@ -9,7 +9,23 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ["var(--font-display)", "sans-serif"],
+        body: ["var(--font-body)", "sans-serif"],
+        sans: ["var(--font-body)", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
       colors: {
+        // Brand editorial tokens
+        "brand-bg": "#0A0C0E",
+        "brand-surface": "#101317",
+        "brand-ink": "#EDE7DC",
+        "brand-secondary": "#9EA5A8",
+        "brand-muted": "#6C7378",
+        "brand-amber": "#E8913C",
+        "brand-teal": "#2E6B72",
+        "brand-hairline": "rgba(237,231,220,0.13)",
+
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

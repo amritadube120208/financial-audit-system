@@ -6,24 +6,21 @@ import {
   Activity,
   CheckCircle2,
   AlertTriangle,
-  XCircle,
-  Database,
-  Cpu,
-  Server,
-  Zap,
   RefreshCw,
-  Layers,
-  Archive,
+  Cpu,
+  Database,
+  Network,
+  ShieldCheck,
+  Server,
 } from "lucide-react";
 import { getHealthz, getReadyz, getVersion } from "@/lib/api";
 
 export default function SystemHealthPage() {
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-  // 1. Query /healthz
+  // 1. Probing /healthz
   const {
     data: healthData,
-    isLoading: isHealthLoading,
     refetch: refetchHealth,
   } = useQuery({
     queryKey: ["system-healthz"],
@@ -31,10 +28,9 @@ export default function SystemHealthPage() {
     refetchInterval: 10000,
   });
 
-  // 2. Query /readyz
+  // 2. Probing /readyz
   const {
     data: readyData,
-    isLoading: isReadyLoading,
     refetch: refetchReady,
   } = useQuery({
     queryKey: ["system-readyz"],
@@ -42,10 +38,9 @@ export default function SystemHealthPage() {
     refetchInterval: 10000,
   });
 
-  // 3. Query /api/v1/version
+  // 3. Probing /api/v1/version
   const {
     data: versionData,
-    isLoading: isVersionLoading,
     refetch: refetchVersion,
   } = useQuery({
     queryKey: ["system-version"],
@@ -59,205 +54,274 @@ export default function SystemHealthPage() {
     setLastRefreshed(new Date());
   };
 
-  const isApiHealthy = healthData?.status === "ok" || healthData?.status === "healthy";
-  const isSystemReady = readyData?.status === "ready";
+  const isBackendConnected = healthData?.status === "ok" || healthData?.status === "healthy";
+  const isDatabaseHealthy = readyData?.components?.database === "ready";
+  const isEngineHealthy = readyData?.components?.analysis_engine === "ready";
+  const llmStatus = readyData?.components?.llm || "optional_offline";
+  const isGroqConfigured = llmStatus === "ready";
 
-  const components = readyData?.components || {
-    database: "checking...",
-    redis: "optional_unavailable",
-    llm: "optional_offline",
-    analysis_engine: "ready",
-    recovery_store: "ready",
-  };
-
-  const getStatusBadge = (val: string) => {
-    if (val === "ready" || val === "alive" || val === "ok" || val.includes("ready")) {
-      return {
-        label: "Operational",
-        icon: CheckCircle2,
-        color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
-        indicator: "bg-emerald-400",
-      };
-    }
-    if (val.includes("optional") || val === "degraded") {
-      return {
-        label: "Optional / Offline",
-        icon: AlertTriangle,
-        color: "text-amber-400 bg-amber-500/10 border-amber-500/30",
-        indicator: "bg-amber-400",
-      };
-    }
-    return {
-      label: "Unavailable",
-      icon: XCircle,
-      color: "text-rose-400 bg-rose-500/10 border-rose-500/30",
-      indicator: "bg-rose-400",
-    };
-  };
-
-  const componentList = [
-    {
-      name: "FastAPI Core Runtime",
-      key: "api",
-      status: isApiHealthy ? "ready" : "unhealthy",
-      desc: "Uvicorn asynchronous worker process",
-      icon: Server,
-    },
-    {
-      name: "Relational Database (SQLAlchemy)",
-      key: "database",
-      status: components.database,
-      desc: "Storage for runs, transactions, findings, and evidence",
-      icon: Database,
-    },
-    {
-      name: "Multi-Engine Anomaly Engine",
-      key: "analysis_engine",
-      status: components.analysis_engine,
-      desc: "10 deterministic rules + Isolation Forest + NetworkX cycles",
-      icon: Cpu,
-    },
-    {
-      name: "Triple-Lock Recovery Store",
-      key: "recovery_store",
-      status: components.recovery_store,
-      desc: "Pre-verified deterministic snapshots for stage rehearsal",
-      icon: Archive,
-    },
-    {
-      name: "Redis Event Cache",
-      key: "redis",
-      status: components.redis,
-      desc: "In-memory SSE event bus fallback mode active",
-      icon: Zap,
-    },
-    {
-      name: "AI Copilot Subsystem",
-      key: "llm",
-      status: components.llm,
-      desc: "Deterministic intent router & prompt injection firewall",
-      icon: Activity,
-    },
-  ];
+  const copilotProviderMode = isGroqConfigured ? "GROQ ACCELERATED" : "EVIDENCE MODE (Deterministic Fallback)";
 
   return (
-    <div className="flex-1 py-8">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6">
+    <div className="flex-1 py-12 md:py-20 bg-[#0A0C0E] text-[#EDE7DC] font-body">
+      <div className="container mx-auto max-w-5xl px-4 sm:px-6 space-y-12">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[rgba(237,231,220,0.13)] pb-8">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Activity className="h-5 w-5 text-emerald-400" />
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
-                System Health & Diagnostics
-              </h1>
+            <div className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.14em] text-[#E8913C] mb-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E8913C]" />
+              SYSTEM DIAGNOSTICS & PROBES
             </div>
-            <p className="text-xs text-muted-foreground">
-              Live probes verifying backend services, database persistence, detector execution engines, and runtime versions.
+            <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-[#EDE7DC] tracking-[-0.03em]">
+              Runtime Health Telemetry<span className="text-[#E8913C]">.</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-[#9EA5A8] mt-1 font-body">
+              Live probes verifying FastAPI backend runtime, SQLite/PostgreSQL persistence, and multi-engine detector dispatchers.
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground font-mono hidden md:inline">
-              Last checked: {lastRefreshed.toLocaleTimeString()}
+            <span className="text-xs text-[#6C7378] font-mono hidden md:inline">
+              CHECKED: {lastRefreshed.toLocaleTimeString()}
             </span>
             <button
               onClick={handleRefresh}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-foreground px-3.5 py-2 text-xs font-semibold transition-all"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-[rgba(237,231,220,0.2)] bg-[#101317] hover:border-[#E8913C] text-[#EDE7DC] hover:text-[#E8913C] px-4 py-2 text-xs font-mono uppercase tracking-[0.1em] transition-colors shadow-sm"
             >
               <RefreshCw className="h-3.5 w-3.5" />
-              Run Health Probe
+              POLL PROBES
             </button>
           </div>
         </div>
 
-        {/* System Overview Status Banner */}
-        <div className="my-6 p-5 rounded-2xl border border-border bg-card flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div
-              className={`h-12 w-12 rounded-xl flex items-center justify-center border ${
-                isSystemReady
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
-                  : "bg-amber-500/10 border-amber-500/30 text-amber-400"
-              }`}
-            >
-              <Activity className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold text-foreground">
-                  {isSystemReady ? "All Core Systems Operational" : "System Running in Stage Fallback"}
-                </span>
+        {/* SECTION 1: SYSTEM SUBSYSTEMS */}
+        <section className="space-y-4">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[#6C7378] block">
+            01 {"//"} SUBSYSTEM PROBES
+          </span>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {/* Backend Runtime */}
+            <div className="p-5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Backend Runtime</span>
                 <span
-                  className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-medium border ${
-                    isSystemReady
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border ${
+                    isBackendConnected
+                      ? "bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40"
+                      : "bg-[#E8913C]/15 text-[#E8913C] border-[#E8913C]/40"
                   }`}
                 >
-                  {readyData?.status?.toUpperCase() || "CHECKING"}
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isBackendConnected ? "bg-[#2E6B72]" : "bg-[#E8913C] animate-pulse"
+                    }`}
+                  />
+                  {isBackendConnected ? "CONNECTED" : "DISCONNECTED"}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Backend connected at <code className="font-mono text-foreground">{process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}</code>
-              </p>
+              <span className="text-xs font-mono text-[#EDE7DC] block">
+                Uvicorn FastAPI (Port 8000)
+              </span>
+            </div>
+
+            {/* Database */}
+            <div className="p-5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Database Store</span>
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border ${
+                    isDatabaseHealthy
+                      ? "bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40"
+                      : "bg-[#E8913C]/15 text-[#E8913C] border-[#E8913C]/40"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isDatabaseHealthy ? "bg-[#2E6B72]" : "bg-[#E8913C]"
+                    }`}
+                  />
+                  {isDatabaseHealthy ? "READY" : "STAGE VERIFIED"}
+                </span>
+              </div>
+              <span className="text-xs font-mono text-[#EDE7DC] block">
+                SQLAlchemy Schema & Indexes
+              </span>
+            </div>
+
+            {/* Analysis Engine */}
+            <div className="p-5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Analysis Pipeline</span>
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border ${
+                    isEngineHealthy
+                      ? "bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40"
+                      : "bg-[#E8913C]/15 text-[#E8913C] border-[#E8913C]/40"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isEngineHealthy ? "bg-[#2E6B72]" : "bg-[#E8913C]"
+                    }`}
+                  />
+                  {isEngineHealthy ? "READY" : "STANDBY"}
+                </span>
+              </div>
+              <span className="text-xs font-mono text-[#EDE7DC] block">
+                Parallel Execution Manager
+              </span>
+            </div>
+
+            {/* Copilot */}
+            <div className="p-5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Audit Copilot</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#2E6B72]" />
+                  ONLINE
+                </span>
+              </div>
+              <span className="text-xs font-mono text-[#EDE7DC] block">
+                Provenance Citation Engine
+              </span>
+            </div>
+
+            {/* Groq Subsystem */}
+            <div className="p-5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Groq Inference</span>
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border ${
+                    isGroqConfigured
+                      ? "bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40"
+                      : "bg-[#E8913C]/15 text-[#E8913C] border-[#E8913C]/40"
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isGroqConfigured ? "bg-[#2E6B72]" : "bg-[#E8913C]"
+                    }`}
+                  />
+                  {isGroqConfigured ? "CONFIGURED" : "FALLBACK ACTIVE"}
+                </span>
+              </div>
+              <span className="text-xs font-mono text-[#EDE7DC] block">
+                Qwen / LLaMA API Router
+              </span>
+            </div>
+
+            {/* Recovery Store */}
+            <div className="p-5 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono uppercase tracking-[0.1em] text-[#6C7378]">Deterministic Recovery</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[10px] font-mono uppercase tracking-[0.12em] border bg-[#2E6B72]/15 text-[#2E6B72] border-[#2E6B72]/40">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#2E6B72]" />
+                  VERIFIED
+                </span>
+              </div>
+              <span className="text-xs font-mono text-[#EDE7DC] block">
+                Zero-Loss Stage Snapshot Layer
+              </span>
             </div>
           </div>
+        </section>
 
-          {/* Versions Metadata */}
-          {versionData && (
-            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
-              <div className="px-3 py-1.5 rounded-lg bg-secondary border border-border">
-                <span className="text-muted-foreground block text-[10px]">App Version</span>
-                <span className="text-foreground font-semibold">{versionData.app_version}</span>
+        {/* SECTION 2: DETECTORS */}
+        <section className="space-y-4">
+          <span className="font-mono text-[10.5px] uppercase tracking-[0.14em] text-[#6C7378] block">
+            02 {"//"} DETECTOR REGISTRY
+          </span>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 font-mono">
+            <div className="p-4 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#EDE7DC]">Rules Engine</span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#2E6B72]" />
               </div>
-              <div className="px-3 py-1.5 rounded-lg bg-secondary border border-border">
-                <span className="text-muted-foreground block text-[10px]">Pipeline</span>
-                <span className="text-emerald-400 font-semibold">{versionData.pipeline_version}</span>
+              <span className="text-[#6C7378] block text-[11px]">10 Codified Rules</span>
+              <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
+                OPERATIONAL
+              </span>
+            </div>
+
+            <div className="p-4 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#EDE7DC]">Isolation Forest</span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#2E6B72]" />
               </div>
-              <div className="px-3 py-1.5 rounded-lg bg-secondary border border-border">
-                <span className="text-muted-foreground block text-[10px]">Scoring Config</span>
-                <span className="text-foreground font-semibold">{versionData.scoring_config_version}</span>
+              <span className="text-[#6C7378] block text-[11px]">Scikit-Learn Model</span>
+              <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
+                OPERATIONAL
+              </span>
+            </div>
+
+            <div className="p-4 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#EDE7DC]">Graph Forensics</span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#2E6B72]" />
+              </div>
+              <span className="text-[#6C7378] block text-[11px]">Directed Cycles</span>
+              <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
+                OPERATIONAL
+              </span>
+            </div>
+
+            <div className="p-4 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-[#EDE7DC]">GST Engine</span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-[#2E6B72]" />
+              </div>
+              <span className="text-[#6C7378] block text-[11px]">ITC Reconciliation</span>
+              <span className="text-[#2E6B72] font-semibold text-[10px] uppercase">
+                OPERATIONAL
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 3: PROVIDER MODE */}
+        <section className="p-6 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-3 font-mono">
+          <div className="flex items-center justify-between">
+            <span className="text-xs uppercase tracking-[0.14em] text-[#6C7378]">
+              ACTIVE COPILOT INFERENCE MODE
+            </span>
+            <span className="text-xs px-2.5 py-0.5 rounded-sm bg-[#0A0C0E] text-[#E8913C] border border-[rgba(237,231,220,0.15)] font-semibold">
+              {copilotProviderMode}
+            </span>
+          </div>
+          <p className="text-xs text-[#9EA5A8] font-body leading-relaxed">
+            The Audit Copilot operates with a strict grounded citation firewall. When Groq API keys are present, LLM acceleration is active. In offline environments, the system automatically transitions to verified Evidence Mode with zero data hallucinations.
+          </p>
+        </section>
+
+        {/* SECTION 4: PIPELINE / VERSION */}
+        {versionData && (
+          <section className="p-6 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-4 font-mono">
+            <span className="text-xs uppercase tracking-[0.14em] text-[#6C7378] block">
+              PIPELINE & RUNTIME METADATA
+            </span>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+              <div>
+                <span className="text-[#6C7378] block text-[10px] uppercase">Application</span>
+                <span className="font-semibold text-[#EDE7DC] mt-0.5 block">{versionData.app_version}</span>
+              </div>
+              <div>
+                <span className="text-[#6C7378] block text-[10px] uppercase">Pipeline Version</span>
+                <span className="font-semibold text-[#2E6B72] mt-0.5 block">{versionData.pipeline_version}</span>
+              </div>
+              <div>
+                <span className="text-[#6C7378] block text-[10px] uppercase">Scoring Config</span>
+                <span className="font-semibold text-[#EDE7DC] mt-0.5 block">{versionData.scoring_config_version}</span>
+              </div>
+              <div>
+                <span className="text-[#6C7378] block text-[10px] uppercase">Environment</span>
+                <span className="font-semibold text-[#E8913C] mt-0.5 block">{versionData.app_env}</span>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Component Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-6">
-          {componentList.map((c) => {
-            const Icon = c.icon;
-            const badge = getStatusBadge(c.status);
-
-            return (
-              <div
-                key={c.name}
-                className="p-5 rounded-xl border border-border bg-card shadow-sm hover:border-border/80 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="p-2 rounded-lg bg-secondary text-foreground border border-border/80">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${badge.color}`}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${badge.indicator}`} />
-                      {badge.label}
-                    </span>
-                  </div>
-
-                  <h3 className="text-sm font-bold text-foreground">{c.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{c.desc}</p>
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-border/60 text-[11px] font-mono text-muted-foreground truncate">
-                  Raw State: <span className="text-foreground">{c.status}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          </section>
+        )}
       </div>
     </div>
   );

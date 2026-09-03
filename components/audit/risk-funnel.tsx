@@ -1,4 +1,4 @@
-import { ArrowDown, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import type { RunMetrics } from "@/lib/types";
 import { formatNumber } from "@/lib/utils";
 
@@ -7,85 +7,82 @@ interface RiskFunnelProps {
 }
 
 export function RiskFunnel({ metrics }: RiskFunnelProps) {
-  const total = metrics.total_transactions || 1;
-  const rawFlags = metrics.raw_detector_flags || 0;
-  const suspicious = metrics.suspicious_transactions || 0;
-  const totalFindings =
-    (metrics.critical_findings || 0) +
-    (metrics.high_findings || 0) +
-    (metrics.medium_findings || 0) +
-    (metrics.low_findings || 0);
-  const critical = metrics.critical_findings || 0;
+  const m = metrics as any;
+  const total = metrics.total_transactions ?? m.transactions_analyzed ?? 1;
+  const rawFlags = metrics.raw_detector_flags ?? 0;
+  const suspicious = metrics.suspicious_transactions ?? m.unique_suspicious_transactions ?? 0;
+  const critical = metrics.critical_findings ?? 0;
+  const high = metrics.high_findings ?? 0;
+  const medium = metrics.medium_findings ?? 0;
+  const low = metrics.low_findings ?? 0;
+  const totalFindings = critical + high + medium + low;
 
   const stages = [
     {
-      label: "Total Ledger Transactions",
+      label: "TOTAL LEDGER TRANSACTIONS",
       count: total,
       pct: 100,
-      color: "bg-slate-500/20 text-slate-300 border-slate-500/30",
-      barColor: "bg-slate-500",
+      barColor: "bg-[#EDE7DC]",
     },
     {
-      label: "Raw Detector Flags",
+      label: "RAW DETECTOR FLAGS",
       count: rawFlags,
-      pct: Math.min(100, Math.round((rawFlags / total) * 100 * 10) / 10),
-      color: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-      barColor: "bg-indigo-500",
+      pct: total > 0 ? Math.min(100, Math.round((rawFlags / total) * 100 * 10) / 10) : 0,
+      barColor: "bg-[#6C7378]",
     },
     {
-      label: "Unique Suspicious Transactions",
+      label: "UNIQUE SUSPICIOUS TRANSACTIONS",
       count: suspicious,
-      pct: Math.min(100, Math.round((suspicious / total) * 100 * 10) / 10),
-      color: "bg-amber-500/20 text-amber-300 border-amber-500/30",
-      barColor: "bg-amber-500",
+      pct: total > 0 ? Math.min(100, Math.round((suspicious / total) * 100 * 10) / 10) : 0,
+      barColor: "bg-[#2E6B72]",
     },
     {
-      label: "Ranked Investigation Findings",
+      label: "RANKED INVESTIGATION FINDINGS",
       count: totalFindings,
-      pct: Math.min(100, Math.round((totalFindings / total) * 100 * 10) / 10),
-      color: "bg-teal-500/20 text-teal-300 border-teal-500/30",
-      barColor: "bg-teal-500",
+      pct: total > 0 ? Math.min(100, Math.round((totalFindings / total) * 100 * 10) / 10) : 0,
+      barColor: "bg-[#E8913C]",
     },
     {
-      label: "Critical Review Priority",
+      label: "CRITICAL REVIEW PRIORITY",
       count: critical,
-      pct: Math.min(100, Math.round((critical / total) * 100 * 10) / 10),
-      color: "bg-rose-500/20 text-rose-300 border-rose-500/30",
-      barColor: "bg-rose-500",
+      pct: total > 0 ? Math.min(100, Math.round((critical / total) * 100 * 10) / 10) : 0,
+      barColor: "bg-[#E8913C]",
     },
   ];
 
   return (
-    <div className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-6 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317]">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-            <Filter className="h-4 w-4 text-emerald-400" />
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E8913C]" />
+            <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-[#6C7378]">
+              SAMPLE PRUNING PIPELINE
+            </span>
+          </div>
+          <h3 className="font-display font-bold text-base text-[#EDE7DC] mt-0.5 tracking-tight">
             Audit Triage Funnel
           </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            How 100k raw ledger rows are distilled down to high-conviction audit cases.
-          </p>
         </div>
       </div>
 
-      <div className="space-y-3.5">
+      <div className="space-y-4 font-mono">
         {stages.map((stage, idx) => (
           <div key={stage.label} className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-medium text-foreground flex items-center gap-2">
-                <span className="text-[10px] font-mono text-muted-foreground w-4">0{idx + 1}</span>
+              <span className="text-[#EDE7DC] flex items-center gap-2 font-medium">
+                <span className="text-[10px] text-[#6C7378] w-4">0{idx + 1}</span>
                 {stage.label}
               </span>
-              <div className="flex items-center gap-2 font-mono">
-                <span className="font-semibold text-foreground">{formatNumber(stage.count)}</span>
-                <span className="text-muted-foreground text-[11px]">({stage.pct}%)</span>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-bold text-[#EDE7DC]">{formatNumber(stage.count)}</span>
+                <span className="text-[#6C7378] text-[11px]">({stage.pct}%)</span>
               </div>
             </div>
-            <div className="h-2 w-full rounded-full bg-secondary/80 overflow-hidden">
+            <div className="h-1.5 w-full rounded-sm bg-[#0A0C0E] border border-[rgba(237,231,220,0.08)] overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${stage.barColor}`}
-                style={{ width: `${Math.max(2, Math.min(100, stage.pct))}%` }}
+                className={`h-full rounded-sm transition-all duration-300 ${stage.barColor}`}
+                style={{ width: `${Math.max(1, Math.min(100, stage.pct))}%` }}
               />
             </div>
           </div>

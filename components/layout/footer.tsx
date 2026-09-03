@@ -1,35 +1,50 @@
 import Link from "next/link";
-import { ShieldCheck, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-border/60 bg-card/40 py-8 text-xs text-muted-foreground">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <span className="font-semibold text-foreground">AuditGraph</span>
-          <span>— Explainable Financial Audit Anomaly Triage Platform</span>
+    <footer className="mt-auto relative bg-[#0A0C0E] border-t border-[rgba(237,231,220,0.13)] overflow-hidden">
+      {/* Editorial Metadata Strip */}
+      <div className="container mx-auto max-w-7xl px-4 sm:px-6 pt-10 pb-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-[11px] font-mono text-[#6C7378] tracking-[0.08em]">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+          <div className="flex items-center gap-2 text-[#EDE7DC]">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E8913C]" />
+            <span className="font-display font-bold tracking-tight text-xs">AUDITGRAPH</span>
+            <span className="text-[#6C7378]">• STAGE RUNTIME</span>
+          </div>
+          <span className="hidden sm:inline text-[rgba(237,231,220,0.2)]">|</span>
+          <span>MULTI-ENGINE FORENSIC AUDIT SUITE</span>
         </div>
 
-        <div className="flex items-center gap-6">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Home
+        <div className="flex flex-wrap items-center gap-6 font-body text-[11px] uppercase tracking-[0.12em] text-[#9EA5A8]">
+          <Link href="/" className="hover:text-[#EDE7DC] transition-colors">
+            HOME
           </Link>
-          <Link href="/system-health" className="hover:text-foreground transition-colors">
-            System Health
+          <Link href="/audit" className="hover:text-[#EDE7DC] transition-colors">
+            AUDIT
           </Link>
-          <Link href="/about" className="hover:text-foreground transition-colors">
-            About & Architecture
+          <Link href="/about" className="hover:text-[#EDE7DC] transition-colors">
+            ABOUT
+          </Link>
+          <Link href="/system-health" className="hover:text-[#EDE7DC] transition-colors">
+            SYSTEM HEALTH
           </Link>
           <a
-            href="http://localhost:8000/docs"
+            href="/docs"
             target="_blank"
             rel="noreferrer"
-            className="hover:text-emerald-400 flex items-center gap-1 transition-colors text-foreground"
+            className="hover:text-[#E8913C] flex items-center gap-1 transition-colors text-[#EDE7DC]"
           >
-            FastAPI Docs <ArrowUpRight className="h-3 w-3" />
+            API DOCS <ArrowUpRight className="h-3 w-3" />
           </a>
         </div>
+      </div>
+
+      {/* Massive Cropped Editorial Wordmark */}
+      <div className="w-full select-none pointer-events-none overflow-hidden flex justify-center translate-y-[28%] sm:translate-y-[24%]">
+        <span className="font-display font-extrabold text-[15vw] sm:text-[16vw] leading-none tracking-[-0.05em] text-[rgba(237,231,220,0.06)] whitespace-nowrap">
+          AUDITGRAPH<span className="text-[#E8913C]/20">.</span>
+        </span>
       </div>
     </footer>
   );

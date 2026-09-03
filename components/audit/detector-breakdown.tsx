@@ -1,4 +1,4 @@
-import { Cpu, ShieldCheck, Network, Layers, Sparkles } from "lucide-react";
+import { Cpu, ShieldCheck, Network, Layers } from "lucide-react";
 import type { DetectorInfo } from "@/lib/types";
 
 interface DetectorBreakdownProps {
@@ -15,52 +15,49 @@ export function DetectorBreakdown({ detectors }: DetectorBreakdownProps) {
     scoring: Layers,
   };
 
-  const familyBadges: Record<string, string> = {
-    rules: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    ml: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-    graph: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    scoring: "bg-teal-500/10 text-teal-400 border-teal-500/20",
-  };
-
   return (
-    <div className="p-6 rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+    <div className="p-6 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317]">
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Multi-Engine Detector Execution</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Breakdown of detector families, detected anomaly clusters, and individual runtimes.
-          </p>
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#E8913C]" />
+            <span className="text-[10.5px] font-mono uppercase tracking-[0.14em] text-[#6C7378]">
+              ENGINE DISPATCH TELEMETRY
+            </span>
+          </div>
+          <h3 className="font-display font-bold text-base text-[#EDE7DC] mt-0.5 tracking-tight">
+            Multi-Engine Detector Execution
+          </h3>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 font-mono">
         {entries.map(([name, info]) => {
           const family = info.family || "rules";
           const Icon = familyIcons[family] || ShieldCheck;
-          const badgeClass = familyBadges[family] || familyBadges.rules;
 
           return (
             <div
               key={name}
-              className="p-3.5 rounded-xl border border-border/70 bg-secondary/30 hover:bg-secondary/50 transition-colors flex flex-col justify-between"
+              className="p-4 rounded-sm border border-[rgba(237,231,220,0.1)] bg-[#0A0C0E] hover:border-[rgba(237,231,220,0.2)] transition-colors flex flex-col justify-between"
             >
               <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="font-semibold text-xs text-foreground font-mono truncate" title={name}>
+                <span className="font-semibold text-xs text-[#EDE7DC] truncate" title={name}>
                   {name}
                 </span>
-                <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded border ${badgeClass}`}>
+                <span className="text-[10px] uppercase px-1.5 py-0.5 rounded-sm border border-[#2E6B72]/40 bg-[#2E6B72]/10 text-[#2E6B72]">
                   {family}
                 </span>
               </div>
 
-              <div className="flex items-end justify-between text-xs mt-2 pt-2 border-t border-border/40 font-mono">
+              <div className="flex items-end justify-between text-xs mt-2 pt-2 border-t border-[rgba(237,231,220,0.08)]">
                 <div>
-                  <span className="text-[10px] text-muted-foreground block">Findings</span>
-                  <span className="font-bold text-foreground">{info.findings_count}</span>
+                  <span className="text-[10px] text-[#6C7378] block">Findings</span>
+                  <span className="font-bold text-[#E8913C]">{info.findings_count}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-muted-foreground block">Duration</span>
-                  <span className="text-muted-foreground">{info.duration_ms}ms</span>
+                  <span className="text-[10px] text-[#6C7378] block">Runtime</span>
+                  <span className="text-[#9EA5A8]">{info.duration_ms}ms</span>
                 </div>
               </div>
             </div>
