@@ -218,9 +218,13 @@ export interface CopilotSession {
 }
 
 export interface CopilotCitation {
-  type: string;
-  id: string;
-  label: string;
+  type?: string;
+  id?: string;
+  label?: string;
+  source_type?: string;
+  source_id?: string;
+  field?: string;
+  value?: any;
 }
 
 export interface CopilotMessage {

@@ -12,12 +12,12 @@ import {
   Database,
   Layers,
   GitCommit,
-  ShieldCheck,
+  HardDrive,
+  Server,
 } from "lucide-react";
 import { getHealth, getReady, getVersion } from "../../lib/api/health";
-import { formatDateTime } from "../../lib/utils/formatters";
 
-export default function ApiHealthPage() {
+export default function SystemHealthPage() {
   const [latency, setLatency] = useState<number | null>(null);
 
   const {
@@ -64,6 +64,9 @@ export default function ApiHealthPage() {
     refetchVersion();
   };
 
+  const isHealthy = health?.status === "healthy" || health?.status === "ok";
+  const isReady = ready?.ready === true || ready?.status === "ready";
+
   return (
     <div className="max-w-4xl mx-auto space-y-6 py-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
@@ -94,17 +97,17 @@ export default function ApiHealthPage() {
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               API Liveness (/healthz)
             </span>
-            {health?.status === "healthy" ? (
+            {isHealthy ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             ) : (
               <XCircle className="w-4 h-4 text-red-500" />
             )}
           </div>
           <div className="text-xl font-bold font-mono text-slate-900">
-            {isLoadingHealth ? "Checking..." : health?.status?.toUpperCase() || "OFFLINE"}
+            {isLoadingHealth ? "Checking..." : isHealthy ? "HEALTHY" : "OFFLINE"}
           </div>
           <p className="text-[11px] text-slate-500">
-            Service: {health?.service || "AuditGraph Backend"}
+            Service: {health?.service || "AuditGraph Backend"} (v{health?.version || "1.0.0"})
           </p>
         </div>
 
@@ -114,14 +117,14 @@ export default function ApiHealthPage() {
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Readiness (/readyz)
             </span>
-            {ready?.ready ? (
+            {isReady ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             ) : (
               <XCircle className="w-4 h-4 text-red-500" />
             )}
           </div>
           <div className="text-xl font-bold font-mono text-slate-900">
-            {isLoadingReady ? "Checking..." : ready?.ready ? "READY" : "NOT READY"}
+            {isLoadingReady ? "Checking..." : isReady ? "READY" : "NOT READY"}
           </div>
           <p className="text-[11px] text-slate-500">
             Database: {ready?.database || "connected"} | Cache: {ready?.cache || "operational"}
@@ -139,9 +142,59 @@ export default function ApiHealthPage() {
           <div className="text-xl font-bold font-mono text-slate-900">
             {latency !== null ? `${latency} ms` : "—"}
           </div>
-          <p className="text-[11px] text-slate-500">HTTP REST request benchmark</p>
+          <p className="text-[11px] text-slate-500">Live HTTP benchmark to FastAPI</p>
         </div>
       </div>
+
+      {/* Real OS Process Telemetry Panel */}
+      {health?.telemetry && (
+        <div className="bg-white border border-border rounded-xl p-5 shadow-sm space-y-3">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Server className="w-4 h-4 text-brand-600" />
+            Live Process & Hardware Telemetry (Real-Time)
+          </h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                RAM Resident Working Set
+              </span>
+              <span className="text-base font-bold font-mono text-slate-900">
+                {health.telemetry.memory_resident_mb > 0
+                  ? `${health.telemetry.memory_resident_mb} MB`
+                  : "Active Process"}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                Process Uptime
+              </span>
+              <span className="text-base font-bold font-mono text-slate-900">
+                {health.telemetry.uptime_seconds}s
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                Active In-Memory Audits
+              </span>
+              <span className="text-base font-bold font-mono text-brand-600">
+                {health.telemetry.active_runs_in_memory}
+              </span>
+            </div>
+
+            <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
+              <span className="text-[10px] text-slate-500 uppercase font-semibold block">
+                Loaded Datasets
+              </span>
+              <span className="text-base font-bold font-mono text-slate-900">
+                {health.telemetry.loaded_datasets_count}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Engine Status Panel */}
       <div className="bg-white border border-border rounded-xl p-6 shadow-sm space-y-4">

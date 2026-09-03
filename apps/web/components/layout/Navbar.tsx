@@ -36,10 +36,10 @@ export const Navbar: React.FC = () => {
   });
 
   const navLinks = [
-    { name: "Dashboard", href: "/audits/run-demo-sme-2026", icon: Layers },
-    { name: "New Audit", href: "/audits/new", icon: FileSpreadsheet },
-    { name: "Transactions", href: "/audits/run-demo-sme-2026/transactions", icon: Database },
-    { name: "System Health", href: "/api-health", icon: Activity },
+    { name: "Home", href: "/", icon: Layers },
+    { name: "Audit", href: "/audits/new", icon: FileSpreadsheet },
+    { name: "About", href: "/about", icon: CheckCircle2 },
+    { name: "System Health", href: "/system-health", icon: Activity },
   ];
 
   if (isPresentationMode) {
@@ -130,7 +130,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           {/* Live Backend Health Status */}
           <Link
-            href="/api-health"
+            href="/system-health"
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-slate-50 hover:bg-slate-100 transition-colors border-slate-200"
             title={isHealthOk ? "FastAPI Backend Connected & Healthy" : "Checking Backend Connection..."}
           >

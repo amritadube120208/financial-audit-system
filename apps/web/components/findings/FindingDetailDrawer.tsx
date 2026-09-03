@@ -57,6 +57,8 @@ export const FindingDetailDrawer: React.FC<FindingDetailDrawerProps> = ({
 
           <button
             onClick={onClose}
+            aria-label="Close drawer"
+            title="Close drawer"
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
           >
             <X className="w-5 h-5" />

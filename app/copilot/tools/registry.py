@@ -32,7 +32,7 @@ class CopilotTools:
         if not result:
             return {"error": "Run not found"}
         for case in result.get("cases", []):
-            if case.get("case_id") == finding_id:
+            if case.get("case_id") == finding_id or case.get("finding_id") == finding_id:
                 return case
         return {"error": f"Finding/Case {finding_id} not found"}
 
@@ -42,8 +42,8 @@ class CopilotTools:
             return finding
         return {
             "case_id": case_id,
-            "risk_score": finding.get("risk_score"),
-            "severity": finding.get("severity"),
+            "risk_score": finding.get("risk_score", 0.0),
+            "severity": finding.get("severity", "LOW"),
             "detector_scores": finding.get("detector_scores", {}),
             "anomaly_types": finding.get("anomaly_types", []),
         }
@@ -53,10 +53,8 @@ class CopilotTools:
         if "error" in finding:
             return {
                 "case_id": case_id,
-                "cycle_detected": True,
-                "nodes": ["COMPANY_MAIN_SELF", "VENDOR_X17", "VENDOR_Y09"],
-                "transfers": ["₹495,000.00", "₹490,000.00", "₹487,500.00"],
-                "window_hours": 36.0,
+                "cycle_detected": False,
+                "error": f"Case '{case_id}' not found for money-flow tracing.",
             }
         return {
             "case_id": case_id,
@@ -74,7 +72,7 @@ class CopilotTools:
         related_cases = []
         for case in result.get("cases", []):
             if entity_id in case.get("entity_ids", []):
-                related_cases.append(case["case_id"])
+                related_cases.append(case.get("case_id", ""))
 
         return {
             "entity_id": entity_id,
@@ -85,9 +83,9 @@ class CopilotTools:
     def get_gst_mismatches(self, run_id: str) -> dict[str, Any]:
         result = stage_store.get_run_result(run_id)
         if not result:
-            return {"gst_mismatches": [], "total_gst_mismatches": 14}
-        gst_cases = [c for c in result.get("cases", []) if "GST_MISMATCH" in c.get("anomaly_types", [])]
-        return {"total_gst_mismatches": max(14, len(gst_cases)), "cases": gst_cases}
+            return {"gst_mismatches": [], "total_gst_mismatches": 0}
+        gst_cases = [c for c in result.get("cases", []) if any("GST" in str(a).upper() for a in c.get("anomaly_types", []))]
+        return {"total_gst_mismatches": len(gst_cases), "cases": gst_cases}
 
     def simulate_risk_without_detector(self, run_id: str, case_id: str, excluded_detector: str) -> dict[str, Any]:
         """
@@ -97,12 +95,13 @@ class CopilotTools:
         """
         finding = self.get_finding(run_id, case_id)
         if "error" in finding:
-            original_score = 100.0
-            detector_scores = {"rules": 0.90, "ml": 0.85, "graph": 0.98, "materiality": 0.99}
-        else:
-            original_score = finding.get("risk_score", 100.0)
-            detector_scores = finding.get("detector_scores", {"rules": 0.90, "ml": 0.85, "graph": 0.98, "materiality": 0.99})
+            return {
+                "case_id": case_id,
+                "error": f"Case '{case_id}' not found for risk simulation.",
+            }
 
+        original_score = float(finding.get("risk_score", 0.0))
+        detector_scores = finding.get("detector_scores", {})
         excluded_key = excluded_detector.lower()
 
         # Build modified detector dictionary excluding target detector
@@ -129,11 +128,17 @@ class CopilotTools:
         Maps anomaly types present in an investigation case to standard Chartered Accountant review procedures.
         """
         finding = self.get_finding(run_id, case_id)
-        anomalies = finding.get("anomaly_types", ["CIRCULAR_FLOW", "PERIOD_END_POSTING", "HIGH_VALUE_OUTLIER"]) if not isinstance(finding, dict) or "error" in finding else finding.get("anomaly_types", [])
+        if not isinstance(finding, dict) or "error" in finding:
+            return {
+                "case_id": case_id,
+                "anomaly_types": [],
+                "recommended_procedures": [],
+            }
 
+        anomalies = finding.get("anomaly_types", [])
         procedures = []
 
-        if any("CIRCULAR" in a or "ROUND_TRIP" in a for a in anomalies):
+        if any("CIRCULAR" in str(a).upper() or "ROUND_TRIP" in str(a).upper() for a in anomalies):
             procedures.append({
                 "anomaly": "CIRCULAR_FLOW",
                 "title": "Circular Payment & Round-Tripping Verification",
@@ -144,7 +149,7 @@ class CopilotTools:
                 ]
             })
 
-        if any("GST" in a for a in anomalies):
+        if any("GST" in str(a).upper() for a in anomalies):
             procedures.append({
                 "anomaly": "GST_MISMATCH",
                 "title": "GSTR-2B Input Tax Credit Reconciliation",
@@ -155,7 +160,7 @@ class CopilotTools:
                 ]
             })
 
-        if any("DUPLICATE" in a for a in anomalies):
+        if any("DUPLICATE" in str(a).upper() for a in anomalies):
             procedures.append({
                 "anomaly": "DUPLICATE",
                 "title": "Duplicate Invoice & Payment Verification",
@@ -166,7 +171,7 @@ class CopilotTools:
                 ]
             })
 
-        if any("PERIOD" in a or "CUTOFF" in a for a in anomalies):
+        if any("PERIOD" in str(a).upper() or "CUTOFF" in str(a).upper() for a in anomalies):
             procedures.append({
                 "anomaly": "PERIOD_END_POSTING",
                 "title": "Year-End Expense Cutoff Audit Procedure",
@@ -177,7 +182,7 @@ class CopilotTools:
                 ]
             })
 
-        if not procedures:
+        if not procedures and anomalies:
             procedures.append({
                 "anomaly": "STATISTICAL_ANOMALY",
                 "title": "Unusual Transaction Inspection Procedure",

@@ -78,12 +78,8 @@ class StageStore:
 
     def get_run_result(self, run_id: str) -> dict[str, Any] | None:
         self._seed_demo_if_empty()
-        if run_id in self._runs:
-            return self._runs[run_id]
-        if self._runs:
-            # Fallback to latest run for demo run IDs
-            return next(iter(self._runs.values()))
-        return None
+        # Authoritative exact run matching only - never silently substitute another audit run
+        return self._runs.get(run_id)
 
     def save_copilot_session(self, session_id: str, run_id: str):
         self._copilot_sessions[session_id] = {
@@ -93,13 +89,8 @@ class StageStore:
         }
 
     def get_copilot_session(self, session_id: str) -> dict[str, Any] | None:
-        if session_id not in self._copilot_sessions:
-            self._copilot_sessions[session_id] = {
-                "session_id": session_id,
-                "run_id": "run_demo_100k",
-                "messages": [],
-            }
-        return self._copilot_sessions[session_id]
+        # Return exact session or None. Never secretly create a demo session.
+        return self._copilot_sessions.get(session_id)
 
     def add_copilot_message(self, session_id: str, message: dict[str, Any]):
         if session_id in self._copilot_sessions:

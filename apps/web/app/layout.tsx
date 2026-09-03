@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
+import { AuditCopilotSheet } from "../components/copilot/AuditCopilotSheet";
 
 export const metadata: Metadata = {
   title: "AuditGraph — Financial Anomaly Triage for SME Audits",
@@ -24,6 +25,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
+          <AuditCopilotSheet />
         </Providers>
       </body>
     </html>

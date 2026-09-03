@@ -1,11 +1,14 @@
-import os
 import time
+import logging
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-
 from app.copilot.schemas import CopilotSession, CopilotMessageRequest, CopilotMessageResponse
 from app.copilot.service import copilot_service
+from app.copilot.providers.factory import get_llm_provider
 from app.persistence.store import stage_store
+from app.persistence.copilot_repository import copilot_repo
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/copilot", tags=["copilot"])
 
@@ -14,37 +17,29 @@ class CreateSessionRequest(BaseModel):
     run_id: str
 
 
-from app.config import settings
-
-
 @router.get("/provider-health")
 async def get_copilot_provider_health():
-    """Retrieve safe metadata on active Copilot LLM providers and fallbacks."""
-    gemini_avail = bool((settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY", "")).strip())
-    groq_avail = bool((settings.GROQ_API_KEY or os.environ.get("GROQ_API_KEY", "")).strip())
-    openrouter_avail = bool((settings.OPENROUTER_API_KEY or os.environ.get("OPENROUTER_API_KEY", "")).strip())
-    openai_avail = bool((settings.OPENAI_API_KEY or os.environ.get("OPENAI_API_KEY", "")).strip())
+    """
+    Real Provider Health Check (Phase 12).
+    Evaluates real reachability, latency, and model availability with caching.
+    Never exposes API keys.
+    """
+    cascade = get_llm_provider()
+    groq_health = await cascade.groq.probe_health() if hasattr(cascade, "groq") else {"status": "unconfigured"}
 
-    if gemini_avail:
-        active = "gemini"
-    elif groq_avail:
-        active = "groq"
-    elif openrouter_avail:
-        active = "openrouter"
-    elif openai_avail:
-        active = "openai"
-    else:
-        active = "deterministic_fallback"
+    active_provider = "groq" if groq_health.get("reachable") else "deterministic_fallback"
 
     return {
-        "active_provider": active,
-        "status": "available",
+        "active_provider": active_provider,
+        "status": "healthy" if groq_health.get("reachable") else "degraded_evidence_mode",
         "providers": {
-            "gemini": "configured" if gemini_avail else "not_configured",
-            "groq": "configured" if groq_avail else "not_configured",
-            "openrouter": "configured" if openrouter_avail else "not_configured",
-            "openai": "configured" if openai_avail else "not_configured",
-            "deterministic_fallback": "available",
+            "groq": groq_health,
+            "deterministic_fallback": {
+                "configured": True,
+                "reachable": True,
+                "status": "healthy",
+                "model": "statutory_evidence_engine",
+            },
         },
     }
 
@@ -52,7 +47,10 @@ async def get_copilot_provider_health():
 @router.post("/sessions", status_code=status.HTTP_201_CREATED)
 @router.post("/sessions/", status_code=status.HTTP_201_CREATED)
 async def create_copilot_session(request: CreateSessionRequest):
-    """Create interactive audit copilot session."""
+    """
+    Create a durable, database-backed Copilot session.
+    Strictly validates run_id. If run does not exist, returns 404 RUN_NOT_FOUND.
+    """
     result = stage_store.get_run_result(request.run_id)
     if not result:
         raise HTTPException(
@@ -61,6 +59,11 @@ async def create_copilot_session(request: CreateSessionRequest):
         )
 
     session_id = f"cop_{int(time.time()*1000)}"
+
+    # 1. Durable SQLite Database Persistence
+    await copilot_repo.create_session(session_id, request.run_id)
+
+    # 2. In-Memory Mirror for synchronous compatibility
     stage_store.save_copilot_session(session_id, request.run_id)
 
     return CopilotSession(
@@ -71,51 +74,109 @@ async def create_copilot_session(request: CreateSessionRequest):
 
 @router.post("/sessions/{session_id}/messages", response_model=CopilotMessageResponse)
 async def post_copilot_message(session_id: str, request: CopilotMessageRequest):
-    """Post prompt to copilot session and retrieve grounded evidence answer."""
-    session = stage_store.get_copilot_session(session_id)
+    """
+    Post prompt to Copilot session and retrieve grounded statutory evidence answer.
+    If session is unknown, returns explicit 404 SESSION_NOT_FOUND (never auto-creates demo session).
+    """
+    # 1. Authoritative DB Session Lookup
+    session = await copilot_repo.get_session(session_id)
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
-        )
+        # Check memory store fallback
+        mem_session = stage_store.get_copilot_session(session_id)
+        if not mem_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
+            )
+        run_id = mem_session.get("run_id", "run_default")
+    else:
+        run_id = session.run_id
 
-    run_id = session.get("run_id", "run_default")
+    # 2. Save user message to durable database
+    user_msg_id = f"msg_usr_{int(time.time()*1000)}"
+    await copilot_repo.save_message(
+        message_id=user_msg_id,
+        session_id=session_id,
+        role="user",
+        content=request.message,
+        mode="user_prompt",
+    )
 
-    # 1. Save user message to session history
-    user_msg = {
-        "message_id": f"msg_usr_{int(time.time()*1000)}",
-        "session_id": session_id,
-        "run_id": run_id,
-        "role": "user",
-        "content": request.message,
-        "message": request.message,
-        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
-    stage_store.add_copilot_message(session_id, user_msg)
-
-    # 2. Process AI Copilot response
+    # 3. Execute Copilot Service lifecycle
     response = await copilot_service.process_message(
         session_id=session_id,
         run_id=run_id,
         request=request,
     )
 
-    # 3. Save assistant response to session history
-    assistant_dict = response.model_dump()
-    assistant_dict["role"] = "assistant"
-    assistant_dict["content"] = response.answer
-    stage_store.add_copilot_message(session_id, assistant_dict)
+    # 4. Save assistant response to durable database
+    citations_data = [c.model_dump() for c in response.citations]
+    await copilot_repo.save_message(
+        message_id=response.message_id,
+        session_id=session_id,
+        role="assistant",
+        content=response.answer,
+        mode=response.mode,
+        grounded=response.grounded,
+        confidence=response.confidence,
+        citations=citations_data,
+        used_tools=response.used_tools,
+    )
+
+    # Sync memory mirror
+    user_msg_dict = {
+        "message_id": user_msg_id,
+        "session_id": session_id,
+        "run_id": run_id,
+        "role": "user",
+        "content": request.message,
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    stage_store.add_copilot_message(session_id, user_msg_dict)
+    asst_dict = response.model_dump()
+    asst_dict["role"] = "assistant"
+    asst_dict["content"] = response.answer
+    stage_store.add_copilot_message(session_id, asst_dict)
 
     return response
 
 
 @router.get("/sessions/{session_id}/messages")
 async def get_copilot_messages(session_id: str):
-    """Retrieve message history of copilot session."""
-    session = stage_store.get_copilot_session(session_id)
+    """
+    Retrieve durable message history of Copilot session from database.
+    If session is missing, returns 404 SESSION_NOT_FOUND.
+    """
+    session = await copilot_repo.get_session(session_id)
     if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
-        )
-    return {"session_id": session_id, "messages": session.get("messages", [])}
+        mem_session = stage_store.get_copilot_session(session_id)
+        if not mem_session:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
+            )
+        return {"session_id": session_id, "messages": mem_session.get("messages", [])}
+
+    # Fetch from SQLite database
+    db_messages = await copilot_repo.get_messages(session_id)
+    formatted = [
+        {
+            "message_id": m.id,
+            "session_id": m.session_id,
+            "role": m.role,
+            "content": m.content,
+            "mode": m.mode,
+            "grounded": m.grounded,
+            "confidence": m.confidence,
+            "citations": m.citations_json,
+            "used_tools": m.used_tools_json,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in db_messages
+    ]
+
+    return {
+        "session_id": session_id,
+        "run_id": session.run_id,
+        "messages": formatted,
+    }

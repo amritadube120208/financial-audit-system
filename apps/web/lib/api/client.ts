@@ -58,14 +58,22 @@ export async function apiClient<T>(
         // Fallback for non-JSON error
       }
 
-      if (errorData?.error) {
+      const errObj = (errorData as any)?.error || (typeof (errorData as any)?.detail === "object" ? (errorData as any).detail : null);
+      if (errObj) {
         throw new APIClientError(
-          errorData.error.message || `API request failed with status ${res.status}`,
-          errorData.error.code,
+          errObj.message || `API request failed with status ${res.status}`,
+          errObj.code || "HTTP_ERROR",
           res.status,
-          errorData.error.recoverable ?? true,
-          errorData.error.required_fields || [],
-          errorData.error.request_id
+          errObj.recoverable ?? true,
+          errObj.required_fields || [],
+          errObj.request_id
+        );
+      }
+      if (typeof (errorData as any)?.detail === "string") {
+        throw new APIClientError(
+          (errorData as any).detail,
+          "HTTP_ERROR",
+          res.status
         );
       }
 

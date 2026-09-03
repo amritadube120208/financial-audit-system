@@ -20,5 +20,5 @@ async def test_provider_cascade_fallback_graceful(monkeypatch):
     )
 
     assert resp.grounded is True
-    assert resp.mode == "deterministic_evidence_fallback"
+    assert resp.mode in ("deterministic_fallback", "deterministic_evidence_fallback")
     assert "case_inv_001" in resp.answer

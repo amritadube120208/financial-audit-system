@@ -39,6 +39,7 @@ dependencies = [
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = "test_*.py"
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100

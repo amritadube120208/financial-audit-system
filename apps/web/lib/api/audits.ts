@@ -1,6 +1,10 @@
 import { apiClient, getApiBaseUrl } from "./client";
 import { AuditRun, AuditRunCreateRequest, AuditSummary, SSEPipelineEvent } from "../types/api";
 
+export async function listAuditRuns(): Promise<AuditRun[]> {
+  return apiClient<AuditRun[]>("/api/v1/audit-runs");
+}
+
 export async function createAuditRun(payload: AuditRunCreateRequest): Promise<AuditRun> {
   return apiClient<AuditRun>("/api/v1/audit-runs", {
     method: "POST",
@@ -16,15 +20,15 @@ export async function getAuditSummary(runId: string): Promise<AuditSummary> {
   const raw = await apiClient<any>(`/api/v1/audit-runs/${runId}/summary`);
   const s = raw?.summary || raw || {};
 
-  const transaction_count = s.transactions_analyzed ?? s.transaction_count ?? 99906;
-  const critical = s.critical_findings ?? s.critical ?? 46;
-  const high = s.high_findings ?? s.high ?? 312;
-  const medium = s.medium_findings ?? s.medium ?? 1240;
-  const low = s.low_findings ?? s.low ?? 20123;
-  const total_value_inr = s.total_value_inr ?? s.total_ledger_value_inr ?? 142850000.0;
-  const initial_flags = s.initial_flags ?? s.raw_signals ?? 4379;
-  const unique_flagged_transactions = s.unique_flagged_transactions ?? s.unique_vouchers ?? 2840;
-  const triage_reduction_pct = s.review_surface_reduction_pct ?? s.triage_reduction_pct ?? 95.617;
+  const transaction_count = s.transactions_analyzed ?? s.transaction_count ?? 0;
+  const critical = s.critical_findings ?? s.critical ?? 0;
+  const high = s.high_findings ?? s.high ?? 0;
+  const medium = s.medium_findings ?? s.medium ?? 0;
+  const low = s.low_findings ?? s.low ?? 0;
+  const total_value_inr = s.total_value_inr ?? s.total_ledger_value_inr ?? 0.0;
+  const initial_flags = s.initial_flags ?? s.raw_signals ?? 0;
+  const unique_flagged_transactions = s.unique_flagged_transactions ?? s.unique_vouchers ?? 0;
+  const triage_reduction_pct = s.review_surface_reduction_pct ?? s.triage_reduction_pct ?? 0.0;
 
   return {
     run_id: raw?.run_id || runId,
@@ -32,8 +36,8 @@ export async function getAuditSummary(runId: string): Promise<AuditSummary> {
     status: raw?.status || "READY",
     analysis_mode: raw?.analysis_mode || "LIVE",
     pipeline_version: raw?.pipeline_version || "1.0.0",
-    dataset_sha256: raw?.dataset_sha256 || "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    analysis_duration_ms: s.duration_ms || 22080.0,
+    dataset_sha256: raw?.dataset_sha256 || "",
+    analysis_duration_ms: s.duration_ms || 0.0,
     transaction_count,
     total_value_inr,
     initial_flags,

@@ -1,156 +1,117 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  FileSpreadsheet,
-  Play,
-  ShieldAlert,
-  ArrowRight,
-  Sparkles,
-  Network,
-  Cpu,
-  Calculator,
-  CheckCircle2,
-  TrendingDown,
-  Layers,
-} from "lucide-react";
-import { FileDropzone } from "../components/upload/FileDropzone";
-import { SchemaMapper } from "../components/upload/SchemaMapper";
-import { AuditConfigPanel } from "../components/upload/AuditConfigPanel";
-import { Dataset } from "../lib/types/api";
+import { useQuery } from "@tanstack/react-query";
+import { FileSpreadsheet, Play, Layers, Sparkles, AlertCircle, ArrowRight } from "lucide-react";
+import { listAuditRuns, getAuditSummary } from "../lib/api/audits";
+import { KpiCards } from "../components/dashboard/KpiCards";
+import { RiskFunnel } from "../components/dashboard/RiskFunnel";
+import { SeverityDistribution } from "../components/charts/SeverityDistribution";
+import { FindingsTable } from "../components/findings/FindingsTable";
 
-export default function LandingPage() {
-  const router = useRouter();
-  const [activeDataset, setActiveDataset] = useState<Dataset | null>(null);
+export default function HomePage() {
+  // Query all available audit runs dynamically
+  const { data: runs = [], isLoading: isLoadingRuns } = useQuery({
+    queryKey: ["audit-runs"],
+    queryFn: listAuditRuns,
+  });
 
-  const engines = [
-    {
-      title: "1. Deterministic Rules",
-      weight: "35% Baseline Weight",
-      desc: "Instant statutory checks for duplicate invoices, weekend posting violations, round-sum structuring, and fiscal year-end cutoff rushes.",
-      icon: Calculator,
-      color: "text-blue-600 bg-blue-50 border-blue-200",
-    },
-    {
-      title: "2. ML Anomaly Detection",
-      weight: "25% Baseline Weight",
-      desc: "Unsupervised IsolationForest and multi-variate statistical modeling identifying severe counterparty disbursement and velocity anomalies.",
-      icon: Cpu,
-      color: "text-purple-600 bg-purple-50 border-purple-200",
-    },
-    {
-      title: "3. Transaction Graph",
-      weight: "25% Baseline Weight",
-      desc: "Directed graph traversal detecting multi-hop circular round-tripping, vendor-customer layering, and artificial turnover inflation.",
-      icon: Network,
-      color: "text-amber-600 bg-amber-50 border-amber-200",
-    },
-    {
-      title: "4. Materiality Analysis",
-      weight: "15% Baseline Weight",
-      desc: "Audit benchmark scaling aligned with ICAI/statutory materiality thresholds, paired with GSTR-2B purchase register reconciliation.",
-      icon: ShieldAlert,
-      color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-    },
-  ];
+  // Pick the latest available run ID
+  const latestRunId = runs.length > 0 ? runs[runs.length - 1].run_id : "run_demo_100k";
+
+  const { data: summary, isLoading: isLoadingSummary } = useQuery({
+    queryKey: ["audit-summary", latestRunId],
+    queryFn: () => getAuditSummary(latestRunId),
+    enabled: Boolean(latestRunId),
+  });
 
   return (
-    <div className="space-y-12 py-4">
-      {/* Hero Section */}
-      <section className="text-center max-w-4xl mx-auto space-y-6 pt-6">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold shadow-xs">
-          <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-          <span>Explainable Multi-Engine Financial Anomaly Triage for SME Audits</span>
+    <div className="space-y-10 py-6">
+      {/* HEADER SECTION */}
+      <section className="text-center max-w-3xl mx-auto space-y-5">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold">
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Explainable Anomaly Triage for SME Audits</span>
         </div>
-
-        <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
-          Turn <span className="text-brand-600 font-mono">100,000+</span> ledger transactions into a prioritized audit queue.
-        </h1>
-
-        <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-          Detect duplicate entries, unusual behavior, round-tripping, backdating, GST mismatches and other audit red flags with explainable evidence.
+        <h1 className="text-4xl font-black text-slate-900 tracking-tight">AUDITGRAPH</h1>
+        <p className="text-sm text-slate-600 max-w-xl mx-auto">
+          Autonomous financial audit workbench combining deterministic rules, unsupervised machine learning, circular money-flow graph topology, and statutory GSTR-2B tax reconciliation.
         </p>
 
-        {/* Primary and Secondary CTAs */}
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-          <a
-            href="#upload-section"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all"
+        <div className="flex items-center justify-center gap-4 pt-2">
+          <Link
+            href="/audits/new"
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Start New Audit</span>
-          </a>
-
-          <Link
-            href="/audits/run-demo-sme-2026"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold rounded-xl border border-slate-300 shadow-xs transition-all"
-          >
-            <Play className="w-4 h-4 text-brand-600 fill-brand-600" />
-            <span>View Demo Audit (100k Rows)</span>
           </Link>
-        </div>
-      </section>
-
-      {/* Four Evidence Engines Grid */}
-      <section className="space-y-4 pt-4">
-        <div className="text-center space-y-1">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
-            Four Orthogonal Evidence Engines
-          </h2>
-          <p className="text-sm font-semibold text-slate-800">
-            Grounded multi-model evidence synthesis for explainable CA triage
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {engines.map((eng) => {
-            const Icon = eng.icon;
-            return (
-              <div
-                key={eng.title}
-                className="bg-white border border-border rounded-xl p-5 shadow-sm space-y-2.5 transition-all hover:shadow-md"
-              >
-                <div className="flex items-center justify-between">
-                  <div className={`p-2 rounded-lg border ${eng.color}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-[10px] font-mono font-semibold text-slate-500">
-                    {eng.weight}
-                  </span>
-                </div>
-                <h3 className="text-sm font-bold text-slate-900">{eng.title}</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">{eng.desc}</p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Upload and Configuration Workflow Area */}
-      <section id="upload-section" className="pt-6 space-y-6">
-        <div className="text-center space-y-1">
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Launch New Audit Engagement
-          </h2>
-          <p className="text-xs text-slate-500">
-            Upload client general ledger to calculate fingerprints, detect schema, and configure detectors
-          </p>
-        </div>
-
-        <div className="max-w-3xl mx-auto space-y-6">
-          {!activeDataset ? (
-            <div className="bg-white border border-border rounded-xl p-6 shadow-sm">
-              <FileDropzone onDatasetUploaded={(ds) => setActiveDataset(ds)} />
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <SchemaMapper dataset={activeDataset} />
-              <AuditConfigPanel dataset={activeDataset} />
-            </div>
+          {latestRunId && (
+            <Link
+              href={`/audits/${latestRunId}`}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-800 text-sm font-semibold rounded-xl border border-slate-300 shadow-sm transition-all"
+            >
+              <Play className="w-4 h-4 text-brand-600 fill-brand-600" />
+              <span>Open Latest Audit ({latestRunId})</span>
+            </Link>
           )}
         </div>
+      </section>
+
+      {/* OVERVIEW / KPI SECTION */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-brand-600" />
+            <span>Executive Overview</span>
+            <span className="text-xs font-mono font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+              Run: {latestRunId}
+            </span>
+          </h2>
+
+          <Link
+            href={`/audits/${latestRunId}`}
+            className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"
+          >
+            <span>Full Workspace</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {summary ? (
+          <div className="space-y-6">
+            <KpiCards summary={summary} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <RiskFunnel summary={summary} />
+              <SeverityDistribution summary={summary} />
+            </div>
+          </div>
+        ) : isLoadingSummary ? (
+          <div className="h-32 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 text-sm">
+            Loading metrics for {latestRunId}...
+          </div>
+        ) : (
+          <div className="bg-white border border-border rounded-xl p-8 text-center space-y-3">
+            <AlertCircle className="w-8 h-8 text-slate-300 mx-auto" />
+            <h3 className="text-sm font-bold text-slate-700">No Audits Ingested Yet</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              Upload a general ledger CSV/Excel file to start multi-engine anomaly detection and view live metrics.
+            </p>
+            <Link
+              href="/audits/new"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:underline pt-2"
+            >
+              Upload General Ledger
+            </Link>
+          </div>
+        )}
+      </section>
+
+      {/* PRIORITY FINDINGS SECTION */}
+      <section className="space-y-4 pt-4">
+        <h2 className="text-lg font-bold text-slate-900">Priority Investigations Queue</h2>
+        <FindingsTable runId={latestRunId} />
       </section>
     </div>
   );
