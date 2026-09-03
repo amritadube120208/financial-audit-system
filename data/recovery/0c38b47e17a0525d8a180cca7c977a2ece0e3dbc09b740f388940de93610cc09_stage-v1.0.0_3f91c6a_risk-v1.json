@@ -1,0 +1,244 @@
+{
+  "dataset_sha256": "0c38b47e17a0525d8a180cca7c977a2ece0e3dbc09b740f388940de93610cc09",
+  "pipeline_version": "stage-v1.0.0+3f91c6a",
+  "scoring_config_version": "risk-v1",
+  "result_data": {
+    "run_id": "run_1788439248920",
+    "status": "READY",
+    "analysis_mode": "live_full",
+    "pipeline_version": "stage-v1.0.0+3f91c6a",
+    "dataset_sha256": "0c38b47e17a0525d8a180cca7c977a2ece0e3dbc09b740f388940de93610cc09",
+    "summary": {
+      "transactions_analyzed": 3,
+      "raw_detector_flags": 3,
+      "unique_suspicious_transactions": 3,
+      "total_cases": 3,
+      "critical_findings": 0,
+      "high_findings": 3,
+      "medium_findings": 0,
+      "low_findings": 0,
+      "monetary_exposure_inr": 1472500.0,
+      "analysis_duration_ms": 119.52
+    },
+    "detectors": [
+      {
+        "name": "rules",
+        "status": "AVAILABLE",
+        "duration_ms": 0.0,
+        "finding_count": 3
+      },
+      {
+        "name": "isolation_forest",
+        "status": "AVAILABLE",
+        "duration_ms": 0.0,
+        "finding_count": 0
+      },
+      {
+        "name": "graph_cycles",
+        "status": "AVAILABLE",
+        "duration_ms": 0.0,
+        "finding_count": 0
+      }
+    ],
+    "top_cases": [
+      {
+        "case_id": "case_inv_001",
+        "run_id": "run_1788439248920",
+        "title": "High-value period-end posting anomaly",
+        "severity": "HIGH",
+        "risk_score": 79.0,
+        "primary_transaction_id": "TXN-001",
+        "transaction_ids": [
+          "TXN-001"
+        ],
+        "entity_ids": [
+          "VENDOR_X17"
+        ],
+        "anomaly_types": [
+          "PERIOD_END_POSTING"
+        ],
+        "monetary_exposure": 495000.0,
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 2,
+            "unit": "days",
+            "source": "derived"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9495,000.00",
+            "unit": null,
+            "source": "ledger"
+          }
+        ],
+        "risk_breakdown": {
+          "rule": {
+            "available": true,
+            "weight": 0.35,
+            "score": 0.7
+          },
+          "ml": {
+            "available": false,
+            "weight": 0.25,
+            "score": null
+          },
+          "graph": {
+            "available": false,
+            "weight": 0.25,
+            "score": null
+          },
+          "materiality": {
+            "available": true,
+            "weight": 0.15,
+            "score": 1.0
+          },
+          "effective_weights": {
+            "rule": 0.7,
+            "materiality": 0.3
+          },
+          "renormalized": true
+        },
+        "explanation": "This investigation was prioritized with a risk score of 79.0/100 (HIGH) based on computed evidence:\n\u2022 Days before fiscal year end: 2 days\n\u2022 Transaction Amount: \u20b9495,000.00\nThe pattern requires auditor review; it is not classified as fraud by the system.",
+        "graph": null,
+        "created_at": "2026-09-03T12:40:49.039914"
+      },
+      {
+        "case_id": "case_inv_002",
+        "run_id": "run_1788439248920",
+        "title": "High-value period-end posting anomaly",
+        "severity": "HIGH",
+        "risk_score": 79.0,
+        "primary_transaction_id": "TXN-002",
+        "transaction_ids": [
+          "TXN-002"
+        ],
+        "entity_ids": [
+          "VENDOR_Y09"
+        ],
+        "anomaly_types": [
+          "PERIOD_END_POSTING"
+        ],
+        "monetary_exposure": 490000.0,
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 1,
+            "unit": "days",
+            "source": "derived"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9490,000.00",
+            "unit": null,
+            "source": "ledger"
+          }
+        ],
+        "risk_breakdown": {
+          "rule": {
+            "available": true,
+            "weight": 0.35,
+            "score": 0.7
+          },
+          "ml": {
+            "available": false,
+            "weight": 0.25,
+            "score": null
+          },
+          "graph": {
+            "available": false,
+            "weight": 0.25,
+            "score": null
+          },
+          "materiality": {
+            "available": true,
+            "weight": 0.15,
+            "score": 1.0
+          },
+          "effective_weights": {
+            "rule": 0.7,
+            "materiality": 0.3
+          },
+          "renormalized": true
+        },
+        "explanation": "This investigation was prioritized with a risk score of 79.0/100 (HIGH) based on computed evidence:\n\u2022 Days before fiscal year end: 1 days\n\u2022 Transaction Amount: \u20b9490,000.00\nThe pattern requires auditor review; it is not classified as fraud by the system.",
+        "graph": null,
+        "created_at": "2026-09-03T12:40:49.039914"
+      },
+      {
+        "case_id": "case_inv_003",
+        "run_id": "run_1788439248920",
+        "title": "High-value period-end posting anomaly",
+        "severity": "HIGH",
+        "risk_score": 79.0,
+        "primary_transaction_id": "TXN-003",
+        "transaction_ids": [
+          "TXN-003"
+        ],
+        "entity_ids": [
+          "COMPANY_MAIN"
+        ],
+        "anomaly_types": [
+          "PERIOD_END_POSTING"
+        ],
+        "monetary_exposure": 487500.0,
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 1,
+            "unit": "days",
+            "source": "derived"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9487,500.00",
+            "unit": null,
+            "source": "ledger"
+          }
+        ],
+        "risk_breakdown": {
+          "rule": {
+            "available": true,
+            "weight": 0.35,
+            "score": 0.7
+          },
+          "ml": {
+            "available": false,
+            "weight": 0.25,
+            "score": null
+          },
+          "graph": {
+            "available": false,
+            "weight": 0.25,
+            "score": null
+          },
+          "materiality": {
+            "available": true,
+            "weight": 0.15,
+            "score": 1.0
+          },
+          "effective_weights": {
+            "rule": 0.7,
+            "materiality": 0.3
+          },
+          "renormalized": true
+        },
+        "explanation": "This investigation was prioritized with a risk score of 79.0/100 (HIGH) based on computed evidence:\n\u2022 Days before fiscal year end: 1 days\n\u2022 Transaction Amount: \u20b9487,500.00\nThe pattern requires auditor review; it is not classified as fraud by the system.",
+        "graph": null,
+        "created_at": "2026-09-03T12:40:49.039914"
+      }
+    ],
+    "degraded_reasons": [],
+    "recovery": {
+      "used": false,
+      "reason": null
+    },
+    "created_at": "2026-09-03T12:40:49.039914"
+  }
+}

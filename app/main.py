@@ -1,34 +1,33 @@
 import time
 import uuid
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.api.router import api_router
 from app.domain.errors import AuditGraphException
 from app.persistence.database import init_db
+from app.api.router import api_router
+from app.api.v1.health import router as health_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup actions
+    # Lifecycle startup
     await init_db()
     yield
-    # Shutdown actions
+    # Lifecycle shutdown
 
 
 app = FastAPI(
     title="AuditGraph API",
-    description="Explainable Multi-Engine Financial Anomaly Triage Platform",
-    version="1.0.0",
+    description="Production-shaped AuditGraph Financial Audit Backend & Investigation Platform",
+    version=settings.PIPELINE_VERSION,
     lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
 )
 
-# Configure CORS
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,10 +37,23 @@ app.add_middleware(
 )
 
 
-# Global Custom Exception Handler for Standardized Error Envelope
+@app.middleware("http")
+async def add_request_context(request: Request, call_next):
+    req_id = request.headers.get("X-Request-ID") or f"req_{uuid.uuid4().hex[:10]}"
+    t0 = time.time()
+
+    response: Response = await call_next(request)
+
+    duration_ms = (time.time() - t0) * 1000.0
+    response.headers["X-Request-ID"] = req_id
+    response.headers["X-Response-Time"] = f"{duration_ms:.2f}ms"
+    return response
+
+
+# Global Exception Handler for AuditGraph Domain Exceptions
 @app.exception_handler(AuditGraphException)
 async def auditgraph_exception_handler(request: Request, exc: AuditGraphException):
-    req_id = getattr(request.state, "request_id", f"req_{uuid.uuid4().hex[:12]}")
+    req_id = request.headers.get("X-Request-ID", "req_unknown")
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -55,39 +67,8 @@ async def auditgraph_exception_handler(request: Request, exc: AuditGraphExceptio
     )
 
 
-# General Exception Handler (No raw stack trace leaks to client)
-@app.exception_handler(Exception)
-async def general_exception_handler(request: Request, exc: Exception):
-    req_id = getattr(request.state, "request_id", f"req_{uuid.uuid4().hex[:12]}")
-    return JSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content={
-            "error": {
-                "code": "INTERNAL_SERVER_ERROR",
-                "message": f"An internal error occurred: {str(exc)}",
-                "request_id": req_id,
-            }
-        },
-    )
+# Mount health endpoints at root level (/healthz, /readyz)
+app.include_router(health_router)
 
-
-# Middleware for request ID and duration logging
-@app.middleware("http")
-async def add_request_context(request: Request, call_next):
-    req_id = f"req_{uuid.uuid4().hex[:12]}"
-    request.state.request_id = req_id
-    t0 = time.time()
-    response = await call_next(request)
-    duration_ms = round((time.time() - t0) * 1000, 2)
-    response.headers["X-Request-ID"] = req_id
-    response.headers["X-Process-Time-MS"] = str(duration_ms)
-    return response
-
-
-# Mount API Router
+# Mount API v1 router
 app.include_router(api_router)
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("app.main:app", host="127.0.0.1", port=settings.APP_PORT, reload=True)

@@ -1,10 +1,10 @@
 import time
-from fastapi import APIRouter, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 from app.domain.models import DatasetRef
 from app.ingest.loader import load_dataset
 from app.persistence.store import memory_store
 
-router = APIRouter(prefix="/api/v1/datasets", tags=["Datasets"])
+router = APIRouter(prefix="/datasets", tags=["datasets"])
 
 
 @router.post("", response_model=DatasetRef)
@@ -22,20 +22,17 @@ async def upload_dataset(file: UploadFile = File(...)):
     dataset_id = f"ds_{int(time.time()*1000)}"
     dataset_ref, transactions = load_dataset(content=content, filename=filename, dataset_id=dataset_id)
 
-    # Store in memory store
-    memory_store.datasets[dataset_id] = dataset_ref
-    memory_store.dataset_bytes[dataset_id] = content
-    memory_store.dataset_transactions[dataset_id] = transactions
-
+    memory_store.save_dataset(dataset_ref, transactions)
     return dataset_ref
 
 
 @router.get("/{dataset_id}", response_model=DatasetRef)
 async def get_dataset(dataset_id: str):
-    """Retrieve metadata for a dataset."""
-    if dataset_id not in memory_store.datasets:
+    """Retrieve metadata of uploaded dataset."""
+    ds = memory_store.get_dataset(dataset_id)
+    if not ds:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "DATASET_NOT_FOUND", "message": f"Dataset '{dataset_id}' not found."},
         )
-    return memory_store.datasets[dataset_id]
+    return ds

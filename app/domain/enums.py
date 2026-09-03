@@ -2,10 +2,14 @@ from enum import Enum
 
 
 class DetectorFamily(str, Enum):
-    RULE = "RULE"
-    ML = "ML"
+    RULES = "RULES"
+    RULE = "RULES"  # Alias
+    STATISTICAL = "STATISTICAL"
+    ANOMALY = "STATISTICAL"  # Alias
+    ML = "STATISTICAL"  # Alias
     GRAPH = "GRAPH"
     GST = "GST"
+    MATERIALITY = "MATERIALITY"
 
 
 class Severity(str, Enum):
@@ -21,40 +25,39 @@ class RunState(str, Enum):
     VALIDATING = "VALIDATING"
     FEATURIZING = "FEATURIZING"
     DETECTING = "DETECTING"
-    SCORING = "SCORING"
+    FUSING_EVIDENCE = "FUSING_EVIDENCE"
     GROUPING = "GROUPING"
+    BUILDING_CASES = "BUILDING_CASES"
+    SCORING = "SCORING"
     EXPLAINING = "EXPLAINING"
     PERSISTING = "PERSISTING"
     READY = "READY"
     DEGRADED = "DEGRADED"
-    RECOVERING = "RECOVERING"
+    RECOVERED = "RECOVERED"
     FAILED = "FAILED"
 
 
 class AnalysisMode(str, Enum):
-    LIVE_FULL = "live_full"
+    FULL = "full"
     DEGRADED = "degraded"
-    RECOVERY_SNAPSHOT = "recovery_snapshot"
-    EMERGENCY_RULES_ONLY = "emergency_rules_only"
+    RECOVERED = "recovered"
+    FAST_PATH = "fast_path"
 
 
 class CopilotIntent(str, Enum):
-    RUN_SUMMARY = "run_summary"
-    EXPLAIN_FINDING = "explain_finding"
-    LIST_FINDINGS = "list_findings"
-    SEARCH_TRANSACTIONS = "search_transactions"
-    COMPARE_ENTITIES = "compare_entities"
-    TRACE_FLOW = "trace_flow"
+    SUMMARY = "summary"
+    CASE_EXPLANATION = "case_explanation"
+    MONEY_FLOW = "money_flow"
     RISK_BREAKDOWN = "risk_breakdown"
-    GST_REVIEW = "gst_review"
-    AUDIT_CHECKLIST = "audit_checklist"
-    GENERAL_EXPLANATION = "general_explanation"
-    UNSUPPORTED = "unsupported"
+    ENTITY_COMPARISON = "entity_comparison"
+    PIPELINE_HEALTH = "pipeline_health"
+    GENERAL_QUERY = "general_query"
 
 
 class EvidenceSource(str, Enum):
-    LEDGER = "ledger"
-    DERIVED = "derived"
-    GRAPH = "graph"
-    GST = "gst"
-    MODEL = "model"
+    LEDGER = "LEDGER"
+    RULES = "RULES"
+    ML = "ML"
+    GRAPH = "GRAPH"
+    GST = "GST"
+    DERIVED = "DERIVED"

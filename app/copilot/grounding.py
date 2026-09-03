@@ -2,38 +2,31 @@ from typing import Any
 from app.copilot.schemas import CopilotCitation
 
 
-def validate_grounding_citations(
+def validate_grounding(
     answer: str,
     tool_results: list[dict[str, Any]],
-    available_cases: list[Any],
-) -> tuple[bool, list[CopilotCitation]]:
+    citations: list[CopilotCitation],
+) -> tuple[bool, list[str]]:
     """
-    Validate that facts and IDs mentioned in answer correspond to tool output evidence.
-    Returns:
-        is_grounded: bool
-        citations: list[CopilotCitation]
+    Validates that claims and citations in the Copilot response are grounded in tool results.
+    Returns (is_grounded, notes).
     """
-    citations: list[CopilotCitation] = []
-    seen_ids = set()
+    if not answer:
+        return False, ["Empty answer"]
 
-    for c in available_cases:
-        case_id = getattr(c, "case_id", "")
-        title = getattr(c, "title", "Investigation Case")
-        if case_id and case_id.lower() in answer.lower() and case_id not in seen_seen_ids(seen_ids):
-            seen_ids.add(case_id)
-            citations.append(CopilotCitation(type="case", id=case_id, label=title))
+    notes = []
 
-        for t_id in getattr(c, "transaction_ids", []):
-            if t_id and t_id.lower() in answer.lower() and t_id not in seen_ids:
-                seen_ids.add(t_id)
-                citations.append(CopilotCitation(type="transaction", id=t_id, label=f"Transaction {t_id}"))
+    # Check that forbidden ungrounded statements (e.g. declaring fraud) do not exist
+    answer_lower = answer.lower()
+    if "fraud confirmed" in answer_lower or "fraudulent transaction" in answer_lower:
+        notes.append("Answer contains unauthorized fraud classification claim")
+        return False, notes
 
-    # If answer claims run-specific facts but tool_results was empty, it is UNGROUNDED
-    has_tool_data = any(res.get("data") for res in tool_results)
-    is_grounded = has_tool_data or bool(citations)
+    # Verify that cited IDs exist in tool results
+    tool_data_str = str(tool_results)
+    for cit in citations:
+        if cit.source_id and cit.source_id not in tool_data_str:
+            notes.append(f"Citation ID {cit.source_id} not found in tool results")
 
-    return is_grounded, citations
-
-
-def seen_seen_ids(s: set) -> set:
-    return s
+    is_grounded = len(notes) == 0
+    return is_grounded, notes

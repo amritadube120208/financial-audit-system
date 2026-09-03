@@ -1,0 +1,15 @@
+{
+  "dataset_rows": 99906,
+  "raw_flags": 14333,
+  "prioritized_cases": 4971,
+  "review_surface_reduction_pct": 95.024,
+  "latencies_ms": {
+    "ingestion": 6235.3,
+    "features": 1009.9,
+    "rules": 2407.0,
+    "isolation_forest": 3668.0,
+    "graph_cycles": 281.1,
+    "case_builder": 464.5,
+    "total_pipeline": 14065.9
+  }
+}

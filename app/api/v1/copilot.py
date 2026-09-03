@@ -1,83 +1,66 @@
-from typing import Any
+import time
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.copilot.schemas import CopilotSessionCreate, CopilotSession, CopilotMessageRequest, CopilotMessageResponse
+from app.copilot.schemas import CopilotSession, CopilotMessageRequest, CopilotMessageResponse
 from app.copilot.service import copilot_service
-from app.persistence.store import memory_store
+from app.persistence.store import stage_store
 
-router = APIRouter(prefix="/api/v1/copilot", tags=["AI Audit Copilot"])
-
-# In-memory session and chat history cache
-sessions_cache: dict[str, CopilotSession] = {}
-messages_cache: dict[str, list[dict[str, Any]]] = {}
+router = APIRouter(prefix="/copilot", tags=["copilot"])
 
 
-@router.post("/sessions", response_model=CopilotSession, status_code=status.HTTP_201_CREATED)
-async def create_copilot_session(request: CopilotSessionCreate):
-    """Create new Audit Copilot chat session bound to run_id."""
-    session = copilot_service.create_session(run_id=request.run_id, title=request.title or "Audit Review Session")
-    sessions_cache[session.session_id] = session
-    messages_cache[session.session_id] = []
-    return session
+class CreateSessionRequest(BaseModel):
+    run_id: str
+
+
+@router.post("/sessions", status_code=status.HTTP_201_CREATED)
+@router.post("/sessions/", status_code=status.HTTP_201_CREATED)
+async def create_copilot_session(request: CreateSessionRequest):
+    """Create interactive audit copilot session."""
+    result = stage_store.get_run_result(request.run_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{request.run_id}' not found."},
+        )
+
+    session_id = f"cop_{int(time.time()*1000)}"
+    stage_store.save_copilot_session(session_id, request.run_id)
+
+    return CopilotSession(
+        session_id=session_id,
+        run_id=request.run_id,
+    )
 
 
 @router.post("/sessions/{session_id}/messages", response_model=CopilotMessageResponse)
-async def send_copilot_message(session_id: str, request: CopilotMessageRequest):
-    """Send question to Audit Copilot and receive evidence-grounded response."""
-    if session_id not in sessions_cache:
-        # Create session dynamically if missing
-        session = CopilotSession(session_id=session_id, run_id="run_stage_default", title="Stage Review Session")
-        sessions_cache[session_id] = session
-        messages_cache[session_id] = []
+async def post_copilot_message(session_id: str, request: CopilotMessageRequest):
+    """Post prompt to copilot session and retrieve grounded evidence answer."""
+    session = stage_store.get_copilot_session(session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
+        )
 
-    session = sessions_cache[session_id]
-    run_id = session.run_id
-
-    # Retrieve cases, findings, transactions for current run
-    run_data = memory_store.runs.get(run_id, {})
-    if not run_data and memory_store.runs:
-        # Fallback to last available run for stage mode
-        run_id = list(memory_store.runs.keys())[-1]
-        run_data = memory_store.runs[run_id]
-
-    raw_cases = run_data.get("top_cases", [])
-    cases = []
-    from app.domain.models import InvestigationCase
-    for c in raw_cases:
-        try:
-            cases.append(InvestigationCase(**c))
-        except Exception:
-            pass
-
-    dataset_id = run_data.get("dataset_id")
-    transactions = memory_store.dataset_transactions.get(dataset_id, [])
-
-    response = copilot_service.process_message(
-        session=session,
+    run_id = session.get("run_id", "run_default")
+    response = await copilot_service.process_message(
+        session_id=session_id,
+        run_id=run_id,
         request=request,
-        cases=cases,
-        findings=[],
-        transactions=transactions,
-        run_summary=run_data.get("summary", {}),
     )
 
-    # Cache message history
-    messages_cache[session_id].append({"role": "user", "content": request.message})
-    messages_cache[session_id].append({"role": "assistant", "response": response.model_dump()})
-
+    stage_store.add_copilot_message(session_id, response.model_dump())
     return response
 
 
 @router.get("/sessions/{session_id}/messages")
 async def get_copilot_messages(session_id: str):
-    """Retrieve chat message history for session."""
-    if session_id not in messages_cache:
-        return {"session_id": session_id, "messages": []}
-    return {"session_id": session_id, "messages": messages_cache[session_id]}
-
-
-@router.post("/sessions/{session_id}/actions/{action_id}/confirm")
-async def confirm_copilot_action(session_id: str, action_id: str):
-    """Confirm client UI action suggested by Copilot."""
-    return {"status": "confirmed", "session_id": session_id, "action_id": action_id}
+    """Retrieve message history of copilot session."""
+    session = stage_store.get_copilot_session(session_id)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "SESSION_NOT_FOUND", "message": f"Copilot session '{session_id}' not found."},
+        )
+    return {"session_id": session_id, "messages": session.get("messages", [])}

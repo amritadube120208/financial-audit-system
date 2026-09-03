@@ -1,76 +1,103 @@
-import time
 from typing import Any
 from app.config import settings
-from app.domain.models import InvestigationCase, DetectorFinding, CanonicalTransaction
-from app.copilot.schemas import (
-    CopilotSession,
-    CopilotMessageRequest,
-    CopilotMessageResponse,
-)
-from app.copilot.tools.registry import tool_registry
-from app.copilot.fallback import deterministic_copilot, classify_intent
-from app.copilot.safety import sanitize_ledger_text
-from app.copilot.grounding import validate_grounding_citations
+from app.copilot.schemas import CopilotMessageRequest, CopilotMessageResponse
+from app.copilot.safety import sanitize_user_input
+from app.copilot.tools.registry import copilot_tools
+from app.copilot.grounding import validate_grounding
+from app.copilot.providers.factory import get_llm_provider
 
 
 class CopilotService:
-    def create_session(self, run_id: str, title: str = "Audit Review Session") -> CopilotSession:
-        session_id = f"chat_{int(time.time()*1000)}"
-        return CopilotSession(session_id=session_id, run_id=run_id, title=title)
-
-    def process_message(
+    async def process_message(
         self,
-        session: CopilotSession,
+        session_id: str,
+        run_id: str,
         request: CopilotMessageRequest,
-        cases: list[InvestigationCase],
-        findings: list[DetectorFinding],
-        transactions: list[CanonicalTransaction],
-        run_summary: dict[str, Any],
     ) -> CopilotMessageResponse:
-        t0 = time.time()
-        user_msg = sanitize_ledger_text(request.message)
+        """
+        Process audit copilot query using intent/tool planning, tool execution, provider synthesis, and grounding validation.
+        """
+        clean_text = sanitize_user_input(request.message)
 
-        # Check stage failure flags or LLM availability
-        if settings.DEMO_FAIL_LLM == 1 or settings.STAGE_DISABLE_LLM or not (settings.OPENAI_API_KEY or settings.GEMINI_API_KEY):
-            return deterministic_copilot.answer(
-                message=user_msg,
-                session_id=session.session_id,
-                run_id=session.run_id,
-                selected_case_id=request.selected_case_id or request.selected_finding_id,
-                cases=cases,
-                run_summary=run_summary,
-            )
+        # 1. Intent / Tool Planning & Scope Check
+        selected_case_id = request.selected_case_id
+        selected_entity_id = request.selected_entity_id
 
-        # LLM Provider execution path with tool calling
-        intent = classify_intent(user_msg, request.selected_case_id)
+        tool_results: list[dict[str, Any]] = []
 
-        # Execute appropriate tools based on intent
-        tools_called = ["get_risk_breakdown", "get_finding"]
-        t_res1 = tool_registry.execute("get_risk_breakdown", {"case_id": request.selected_case_id}, cases, findings, transactions, run_summary)
-        t_res2 = tool_registry.execute("get_finding", {"finding_id": request.selected_case_id}, cases, findings, transactions, run_summary)
+        # Execute relevant tools based on query intent & parameters
+        if selected_case_id:
+            res_finding = copilot_tools.get_finding(run_id=run_id, finding_id=selected_case_id)
+            tool_results.append({"tool_name": "get_finding", "result": res_finding})
 
-        tool_outputs = [t_res1.model_dump(), t_res2.model_dump()]
+            res_risk = copilot_tools.get_risk_breakdown(run_id=run_id, case_id=selected_case_id)
+            tool_results.append({"tool_name": "get_risk_breakdown", "result": res_risk})
 
-        # Generate fallback response as grounded baseline
-        fallback_resp = deterministic_copilot.answer(
-            message=user_msg,
-            session_id=session.session_id,
-            run_id=session.run_id,
-            selected_case_id=request.selected_case_id or request.selected_finding_id,
-            cases=cases,
-            run_summary=run_summary,
+        if selected_entity_id:
+            res_entity = copilot_tools.get_entity_profile(run_id=run_id, entity_id=selected_entity_id)
+            tool_results.append({"tool_name": "get_entity_profile", "result": res_entity})
+
+        query_lower = clean_text.lower()
+        if "summary" in query_lower or "overview" in query_lower or not tool_results:
+            res_summary = copilot_tools.get_run_summary(run_id=run_id)
+            tool_results.append({"tool_name": "get_run_summary", "result": res_summary})
+
+        if "gst" in query_lower:
+            res_gst = copilot_tools.get_gst_mismatches(run_id=run_id)
+            tool_results.append({"tool_name": "get_gst_mismatches", "result": res_gst})
+
+        if "pipeline" in query_lower or "health" in query_lower:
+            res_pipe = copilot_tools.get_pipeline_health(run_id=run_id)
+            tool_results.append({"tool_name": "get_pipeline_health", "result": res_pipe})
+
+        # 2. System Context
+        system_prompt = (
+            "You are the AuditGraph AI Copilot, an expert financial audit assistant.\n"
+            "Your role is to explain evidence-backed anomalies to auditors.\n"
+            "STRICT MANDATE:\n"
+            "- Never declare fraud. Use 'Requires auditor review' or 'Potential anomaly'.\n"
+            "- Only make claims directly backed by tool outputs.\n"
+            "- Do not alter risk scores, transaction amounts, or severity levels.\n"
         )
 
-        # Validate citations
-        is_grounded, citations = validate_grounding_citations(
-            answer=fallback_resp.answer,
-            tool_results=tool_outputs,
-            available_cases=cases,
+        context_data = {
+            "session_id": session_id,
+            "run_id": run_id,
+            "selected_case_id": selected_case_id,
+            "selected_entity_id": selected_entity_id,
+        }
+
+        # 3. Provider Generation
+        provider = get_llm_provider()
+        provider_resp = await provider.generate(
+            user_message=clean_text,
+            system_prompt=system_prompt,
+            tool_results=tool_results,
+            context_data=context_data,
         )
 
-        fallback_resp.mode = "llm_grounded" if is_grounded else "deterministic_fallback"
-        fallback_resp.latency_ms = round((time.time() - t0) * 1000.0, 2)
-        return fallback_resp
+        # 4. Grounding Validation
+        is_grounded, grounding_notes = validate_grounding(
+            answer=provider_resp.answer,
+            tool_results=tool_results,
+            citations=provider_resp.citations,
+        )
+
+        final_response = CopilotMessageResponse(
+            message_id=f"msg_{session_id[:6]}_{request.selected_case_id or 'gen'}",
+            session_id=session_id,
+            run_id=run_id,
+            answer=provider_resp.answer,
+            mode=provider_resp.mode,
+            grounded=is_grounded,
+            confidence=provider_resp.confidence,
+            used_tools=provider_resp.used_tools,
+            citations=provider_resp.citations,
+            suggested_actions=provider_resp.suggested_actions,
+            safety_note=provider_resp.safety_note,
+        )
+
+        return final_response
 
 
 copilot_service = CopilotService()

@@ -1,0 +1,275 @@
+{
+  "dataset_sha256": "0c38b47e17a0525d8a180cca7c977a2ece0e3dbc09b740f388940de93610cc09",
+  "pipeline_version": "1.0.0",
+  "scoring_config_version": "1.0.0",
+  "result_data": {
+    "run_id": "run_1788440398172",
+    "status": "READY",
+    "analysis_mode": "full",
+    "degraded_reasons": [],
+    "transactions_analyzed": 3,
+    "total_raw_flags": 3,
+    "total_cases": 3,
+    "critical_cases": 3,
+    "high_cases": 0,
+    "review_surface_reduction_pct": 0.0,
+    "duration_ms": 5.0,
+    "cases": [
+      {
+        "case_id": "case_inv_001",
+        "run_id": "run_1788440398172",
+        "title": "Year-End Expense Spike & Cutoff Anomaly",
+        "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 99.0 (CRITICAL). Monetary Exposure: \u20b9495,000.00.",
+        "risk_score": 99.0,
+        "severity": "CRITICAL",
+        "transaction_ids": [
+          "TXN-001"
+        ],
+        "entity_ids": [
+          "VENDOR_X17"
+        ],
+        "finding_ids": [
+          "rule_spike_run_17_0001"
+        ],
+        "anomaly_types": [
+          "PERIOD_END_POSTING"
+        ],
+        "detector_scores": {
+          "rules": 0.7,
+          "ml": 0.0,
+          "graph": 0.0,
+          "materiality": 0.99
+        },
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 2,
+            "unit": "days",
+            "source": "DERIVED"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9495,000.00",
+            "unit": null,
+            "source": "LEDGER"
+          }
+        ],
+        "explanation": "This investigation was prioritized with a risk score of 99.0/100 (CRITICAL) based on computed evidence:\n\u2022 Days before fiscal year end: 2 days\n\u2022 Transaction Amount: \u20b9495,000.00\nThe pattern requires auditor review; it is not classified as fraud by the system.",
+        "graph_payload": null,
+        "monetary_exposure": 495000.0,
+        "confidence": 0.65,
+        "created_at": "2026-09-03T12:59:58.177486"
+      },
+      {
+        "case_id": "case_inv_002",
+        "run_id": "run_1788440398172",
+        "title": "Year-End Expense Spike & Cutoff Anomaly",
+        "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 98.0 (CRITICAL). Monetary Exposure: \u20b9490,000.00.",
+        "risk_score": 98.0,
+        "severity": "CRITICAL",
+        "transaction_ids": [
+          "TXN-002"
+        ],
+        "entity_ids": [
+          "VENDOR_Y09"
+        ],
+        "finding_ids": [
+          "rule_spike_run_17_0002"
+        ],
+        "anomaly_types": [
+          "PERIOD_END_POSTING"
+        ],
+        "detector_scores": {
+          "rules": 0.7,
+          "ml": 0.0,
+          "graph": 0.0,
+          "materiality": 0.98
+        },
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 1,
+            "unit": "days",
+            "source": "DERIVED"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9490,000.00",
+            "unit": null,
+            "source": "LEDGER"
+          }
+        ],
+        "explanation": "This investigation was prioritized with a risk score of 98.0/100 (CRITICAL) based on computed evidence:\n\u2022 Days before fiscal year end: 1 days\n\u2022 Transaction Amount: \u20b9490,000.00\nThe pattern requires auditor review; it is not classified as fraud by the system.",
+        "graph_payload": null,
+        "monetary_exposure": 490000.0,
+        "confidence": 0.65,
+        "created_at": "2026-09-03T12:59:58.177486"
+      },
+      {
+        "case_id": "case_inv_003",
+        "run_id": "run_1788440398172",
+        "title": "Year-End Expense Spike & Cutoff Anomaly",
+        "description": "Consolidated investigation combining 1 detector signals across 1 transaction(s) and 1 entity(ies). Risk Score: 97.5 (CRITICAL). Monetary Exposure: \u20b9487,500.00.",
+        "risk_score": 97.5,
+        "severity": "CRITICAL",
+        "transaction_ids": [
+          "TXN-003"
+        ],
+        "entity_ids": [
+          "COMPANY_MAIN"
+        ],
+        "finding_ids": [
+          "rule_spike_run_17_0003"
+        ],
+        "anomaly_types": [
+          "PERIOD_END_POSTING"
+        ],
+        "detector_scores": {
+          "rules": 0.7,
+          "ml": 0.0,
+          "graph": 0.0,
+          "materiality": 0.975
+        },
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 1,
+            "unit": "days",
+            "source": "DERIVED"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9487,500.00",
+            "unit": null,
+            "source": "LEDGER"
+          }
+        ],
+        "explanation": "This investigation was prioritized with a risk score of 97.5/100 (CRITICAL) based on computed evidence:\n\u2022 Days before fiscal year end: 1 days\n\u2022 Transaction Amount: \u20b9487,500.00\nThe pattern requires auditor review; it is not classified as fraud by the system.",
+        "graph_payload": null,
+        "monetary_exposure": 487500.0,
+        "confidence": 0.65,
+        "created_at": "2026-09-03T12:59:58.177486"
+      }
+    ],
+    "findings": [
+      {
+        "finding_id": "rule_spike_run_17_0001",
+        "run_id": "run_1788440398172",
+        "detector_family": "RULES",
+        "detector_name": "rules",
+        "anomaly_type": "PERIOD_END_POSTING",
+        "transaction_ids": [
+          "TXN-001"
+        ],
+        "entity_ids": [
+          "VENDOR_X17"
+        ],
+        "raw_score": 0.7,
+        "normalized_score": 0.7,
+        "severity": "MEDIUM",
+        "monetary_exposure": 495000.0,
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 2,
+            "unit": "days",
+            "source": "DERIVED"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9495,000.00",
+            "unit": null,
+            "source": "LEDGER"
+          }
+        ],
+        "metadata": {
+          "days_to_fy_end": 2
+        },
+        "created_at": "2026-09-03T12:59:58.173482"
+      },
+      {
+        "finding_id": "rule_spike_run_17_0002",
+        "run_id": "run_1788440398172",
+        "detector_family": "RULES",
+        "detector_name": "rules",
+        "anomaly_type": "PERIOD_END_POSTING",
+        "transaction_ids": [
+          "TXN-002"
+        ],
+        "entity_ids": [
+          "VENDOR_Y09"
+        ],
+        "raw_score": 0.7,
+        "normalized_score": 0.7,
+        "severity": "MEDIUM",
+        "monetary_exposure": 490000.0,
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 1,
+            "unit": "days",
+            "source": "DERIVED"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9490,000.00",
+            "unit": null,
+            "source": "LEDGER"
+          }
+        ],
+        "metadata": {
+          "days_to_fy_end": 1
+        },
+        "created_at": "2026-09-03T12:59:58.174493"
+      },
+      {
+        "finding_id": "rule_spike_run_17_0003",
+        "run_id": "run_1788440398172",
+        "detector_family": "RULES",
+        "detector_name": "rules",
+        "anomaly_type": "PERIOD_END_POSTING",
+        "transaction_ids": [
+          "TXN-003"
+        ],
+        "entity_ids": [
+          "COMPANY_MAIN"
+        ],
+        "raw_score": 0.7,
+        "normalized_score": 0.7,
+        "severity": "MEDIUM",
+        "monetary_exposure": 487500.0,
+        "evidence": [
+          {
+            "key": "period_end_proximity",
+            "label": "Days before fiscal year end",
+            "value": 1,
+            "unit": "days",
+            "source": "DERIVED"
+          },
+          {
+            "key": "transaction_amount",
+            "label": "Transaction Amount",
+            "value": "\u20b9487,500.00",
+            "unit": null,
+            "source": "LEDGER"
+          }
+        ],
+        "metadata": {
+          "days_to_fy_end": 1
+        },
+        "created_at": "2026-09-03T12:59:58.174493"
+      }
+    ],
+    "created_at": "2026-09-03T12:59:58.177486"
+  }
+}

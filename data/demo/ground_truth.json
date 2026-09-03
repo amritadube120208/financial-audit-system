@@ -1,0 +1,507 @@
+{
+  "seed": 42,
+  "total_rows": 99906,
+  "ground_truth_cases": {
+    "TXN-099751": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099752": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099753": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099754": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099755": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099756": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099757": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099758": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099759": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099760": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099761": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099762": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099763": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099764": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099765": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099766": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099767": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099768": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099769": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099770": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099771": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099772": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099773": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099774": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099775": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099776": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099777": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099778": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099779": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099780": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099781": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099782": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099783": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099784": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099785": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099786": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099787": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099788": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099789": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099790": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099791": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099792": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099793": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099794": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099795": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099796": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099797": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099798": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099799": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099800": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099801": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099802": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099803": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099804": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099805": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099806": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099807": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099808": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099809": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099810": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099811": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099812": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099813": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099814": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099815": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099816": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099817": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099818": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099819": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099820": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099821": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099822": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099823": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099824": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099825": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099826": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099827": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099828": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099829": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-099830": [
+      "EXACT_DUPLICATE"
+    ],
+    "TXN-CYCLE-01-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-01-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-01-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-02-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-02-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-02-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-03-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-03-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-03-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-04-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-04-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-04-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-05-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-05-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-05-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-06-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-06-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-06-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-07-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-07-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-07-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-08-1": [
+      "ROUND_TRIP",
+      "PERIOD_END",
+      "RARE_COUNTERPARTY"
+    ],
+    "TXN-CYCLE-08-2": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-CYCLE-08-3": [
+      "ROUND_TRIP",
+      "PERIOD_END"
+    ],
+    "TXN-BACKDATE-00": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-01": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-02": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-03": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-04": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-05": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-06": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-07": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-08": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-09": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-10": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-11": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-12": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-13": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-14": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-15": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-16": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-17": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-18": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-19": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-20": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-21": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-22": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-23": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-BACKDATE-24": [
+      "BACKDATED_POSTING"
+    ],
+    "TXN-GST-00": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-01": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-02": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-03": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-04": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-05": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-06": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-07": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-08": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-09": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-10": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-11": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-12": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-13": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-14": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-15": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-GST-16": [
+      "GST_BOOK_MISMATCH"
+    ],
+    "TXN-CAPEX-00": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-01": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-02": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-03": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-04": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-05": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-06": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-07": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-08": [
+      "BENIGN_OUTLIER"
+    ],
+    "TXN-CAPEX-09": [
+      "BENIGN_OUTLIER"
+    ]
+  },
+  "hero_case_id": "case_roundtrip_001"
+}

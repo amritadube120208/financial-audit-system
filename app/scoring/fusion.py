@@ -1,114 +1,96 @@
-import math
 from decimal import Decimal
-from typing import Any
+from typing import Sequence, Any
 from app.domain.enums import DetectorFamily, Severity
-from app.domain.models import DetectorFinding
 
-
-DEFAULT_WEIGHTS = {
-    DetectorFamily.RULE: 0.35,
-    DetectorFamily.ML: 0.25,
+BASE_WEIGHTS: dict[DetectorFamily, float] = {
+    DetectorFamily.RULES: 0.35,
+    DetectorFamily.ANOMALY: 0.25,
+    DetectorFamily.STATISTICAL: 0.25,
     DetectorFamily.GRAPH: 0.25,
-    "materiality": 0.15,
+    DetectorFamily.GST: 0.15,
 }
 
-
-def calculate_materiality_score(amount: Decimal, materiality_threshold: Decimal) -> float:
-    """
-    Calculate materiality score Q_i = min(1.0, log(1 + amount) / log(1 + 2 * materiality)).
-    """
-    amt_val = float(abs(amount))
-    thresh_val = float(materiality_threshold) if float(materiality_threshold) > 0 else 50000.0
-
-    if amt_val <= 0:
-        return 0.0
-
-    num = math.log1p(amt_val)
-    den = math.log1p(2.0 * thresh_val)
-
-    if den <= 0:
-        return 0.0
-
-    return min(1.0, max(0.0, num / den))
-
-
-def compute_severity(risk_score: float) -> Severity:
-    """Classify numerical risk score into standardized severity band."""
-    if risk_score >= 85.0:
-        return Severity.CRITICAL
-    elif risk_score >= 70.0:
-        return Severity.HIGH
-    elif risk_score >= 40.0:
-        return Severity.MEDIUM
-    return Severity.LOW
+WEIGHT_MATERIALITY = 0.15
 
 
 def fuse_risk_scores(
-    detector_scores: dict[str, float | None],
-    amount: Decimal,
-    materiality_threshold: Decimal,
-    custom_weights: dict[str, float] | None = None,
+    detector_scores: dict[Any, float],
+    materiality_score: float | Decimal = 0.0,
+    available_families: Sequence[DetectorFamily] | Decimal | float | None = None,
+    materiality_threshold: Decimal | float = Decimal("500000.00"),
 ) -> tuple[float, Severity, dict[str, Any]]:
     """
-    Fuse detector scores with dynamic missing-detector weight renormalization.
-
-    Args:
-        detector_scores: { "RULE": 0.90, "ML": 0.82, "GRAPH": 0.96 } or None for unavailable
-        amount: Transaction / finding monetary exposure
-        materiality_threshold: Configured audit materiality threshold
-        custom_weights: Optional override weights
-
-    Returns:
-        fused_risk_score (0.0 to 100.0)
-        severity (Severity enum)
-        risk_breakdown dict explaining weights, availability, and components
+    Computes weighted multi-detector risk score with dynamic weight renormalization for missing detector families.
+    Flexible signature accepting detector_scores, materiality_score/amount, and available_families/thresholds.
     """
-    weights = custom_weights or {
-        "RULE": 0.35,
-        "ML": 0.25,
-        "GRAPH": 0.25,
-        "materiality": 0.15,
-    }
+    # If caller passed (detector_scores, amount, threshold)
+    if isinstance(materiality_score, Decimal) or (isinstance(available_families, (Decimal, float))):
+        amount = Decimal(str(materiality_score))
+        thresh = Decimal(str(available_families)) if isinstance(available_families, (Decimal, float)) else Decimal("500000.00")
+        mat_ratio = float(min(Decimal("1.0"), max(Decimal("0.0"), amount / thresh)))
+        available_families = [DetectorFamily.RULES, DetectorFamily.ANOMALY, DetectorFamily.GRAPH]
+    else:
+        mat_ratio = float(materiality_score)
+        if available_families is None:
+            available_families = [DetectorFamily.RULES, DetectorFamily.ANOMALY, DetectorFamily.GRAPH]
 
-    # Compute materiality score component
-    mat_score = calculate_materiality_score(amount, materiality_threshold)
-    scores_map = dict(detector_scores)
-    scores_map["materiality"] = mat_score
+    mapped_scores: dict[DetectorFamily, float] = {}
+    for k, v in detector_scores.items():
+        if v is None:
+            continue
+        k_str = str(k).upper()
+        if k_str in ("RULES", "RULE"):
+            mapped_scores[DetectorFamily.RULES] = float(v)
+        elif k_str in ("ANOMALY", "STATISTICAL", "ML"):
+            mapped_scores[DetectorFamily.ANOMALY] = float(v)
+        elif k_str in ("GRAPH",):
+            mapped_scores[DetectorFamily.GRAPH] = float(v)
+        elif k_str in ("GST",):
+            mapped_scores[DetectorFamily.GST] = float(v)
 
-    # Determine active available detectors
-    active_items = []
-    total_active_weight = 0.0
+    valid_families = set(available_families) if isinstance(available_families, (list, set, tuple)) else {DetectorFamily.RULES, DetectorFamily.ANOMALY, DetectorFamily.GRAPH}
 
-    breakdown = {}
+    total_weight = 0.0
+    weighted_sum = 0.0
 
-    for key, weight in weights.items():
-        score = scores_map.get(key)
-        available = (score is not None)
+    score_breakdown: dict[str, Any] = {}
+    effective_weights: dict[str, float] = {}
 
-        if available and score is not None:
-            active_items.append((key, score, weight))
-            total_active_weight += weight
+    for family, score in mapped_scores.items():
+        w = BASE_WEIGHTS.get(family, 0.25)
+        total_weight += w
+        weighted_sum += w * score
+        key_str = "rule" if family == DetectorFamily.RULES else family.value.lower()
+        score_breakdown[key_str] = score
 
-        breakdown[key.lower()] = {
-            "available": available,
-            "weight": weight,
-            "score": round(score, 4) if available and score is not None else None,
-        }
+    if mat_ratio > 0:
+        total_weight += WEIGHT_MATERIALITY
+        weighted_sum += WEIGHT_MATERIALITY * mat_ratio
+        score_breakdown["materiality"] = mat_ratio
 
-    if total_active_weight == 0.0:
-        return 0.0, Severity.LOW, breakdown
+    if total_weight > 0:
+        final_score = (weighted_sum / total_weight) * 100.0
+        for family, score in mapped_scores.items():
+            w = BASE_WEIGHTS.get(family, 0.25)
+            key_str = "rule" if family == DetectorFamily.RULES else family.value.lower()
+            effective_weights[key_str] = w / total_weight
+        if mat_ratio > 0:
+            effective_weights["materiality"] = WEIGHT_MATERIALITY / total_weight
+    else:
+        final_score = 0.0
 
-    # Renormalize weights across available detectors
-    weighted_sum = sum(weight * score for _, score, weight in active_items)
-    fused_score = 100.0 * (weighted_sum / total_active_weight)
-    fused_score = min(100.0, max(0.0, round(fused_score, 1)))
+    final_score = min(100.0, max(0.0, final_score))
 
-    severity = compute_severity(fused_score)
+    if final_score >= 85.0:
+        severity = Severity.CRITICAL
+    elif final_score >= 70.0:
+        severity = Severity.HIGH
+    elif final_score >= 40.0:
+        severity = Severity.MEDIUM
+    else:
+        severity = Severity.LOW
 
-    breakdown["effective_weights"] = {
-        key.lower(): round(weight / total_active_weight, 4)
-        for key, _, weight in active_items
-    }
-    breakdown["renormalized"] = (total_active_weight < sum(weights.values()))
+    score_breakdown["renormalized"] = (len(mapped_scores) < 3)
+    score_breakdown["effective_weights"] = effective_weights
 
-    return fused_score, severity, breakdown
+    return final_score, severity, score_breakdown
