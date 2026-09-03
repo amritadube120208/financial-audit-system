@@ -9,7 +9,53 @@ import {
   AlertCircle,
   FileSpreadsheet,
 } from "lucide-react";
-import { TEAM_MEMBERS } from "@/data/team";
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  responsibility: string;
+  image: string;
+  skills: string[];
+}
+
+const TEAM_MEMBERS: TeamMember[] = [
+  {
+    id: "kushi",
+    name: "Kushi Singh",
+    role: "Lead ML & Anomaly Detection Engineer",
+    responsibility:
+      "Architected the multi-engine IsolationForest & statistical outlier modeling pipelines. Designed automated materiality scoring and dynamic risk thresholding for high-volume SME general ledgers.",
+    image: "/team/kushi_singh.png",
+    skills: ["Scikit-learn", "Isolation Forest", "Statistical Outliers", "Polars"],
+  },
+  {
+    id: "prem",
+    name: "Prem Upadhyay",
+    role: "Graph Forensics & Algorithmic Lead",
+    responsibility:
+      "Engineered the NetworkX graph cycle detection algorithms, circular round-trip money flow tracing, and Cytoscape.js interactive topological visualization for complex entity networks.",
+    image: "/team/prem_upadhyay.png",
+    skills: ["NetworkX", "Graph Cycle Analysis", "Cytoscape.js", "Algorithmic Forensics"],
+  },
+  {
+    id: "amrita",
+    name: "Amrita Dube",
+    role: "Full Stack & Core Platform Lead",
+    responsibility:
+      "Built the end-to-end FastAPI backend services, Next.js 14 reactive dashboard, GSTR-2B statutory tax reconciliation pipeline, and hardened database persistence architecture.",
+    image: "/team/amrita_dube.png",
+    skills: ["FastAPI", "Next.js 14", "SQLAlchemy", "GST Reconciliation"],
+  },
+  {
+    id: "shreya",
+    name: "Shreya Singh",
+    role: "AI Systems & Copilot Architect",
+    responsibility:
+      "Spearheaded the Grounded Statutory Copilot system, Groq LLM inference cascade, multi-tool forensic registry, and anti-hallucination citation validation framework.",
+    image: "/team/shreya_singh.png",
+    skills: ["Groq LLM", "Prompt Hardening", "Grounding Engine", "Agentic Systems"],
+  },
+];
 
 export default function AboutPage() {
   const architectureFlow = [
@@ -219,24 +265,40 @@ export default function AboutPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {TEAM_MEMBERS.map((member) => (
               <div
                 key={member.id}
-                className="p-6 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-4 text-center hover:border-[#E8913C] transition-colors"
+                className="p-6 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] space-y-4 text-center hover:border-[#E8913C] transition-colors flex flex-col justify-between"
               >
-                <div className="h-16 w-16 rounded-full bg-[#0A0C0E] border border-[rgba(237,231,220,0.15)] mx-auto flex items-center justify-center text-[#9EA5A8]">
-                  <User className="h-7 w-7" />
-                </div>
                 <div>
+                  <div className="h-24 w-24 rounded-2xl overflow-hidden border-2 border-[rgba(237,231,220,0.2)] mx-auto mb-4 shadow-md group-hover:border-[#E8913C] transition-colors">
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
                   <h3 className="font-display font-bold text-base text-[#EDE7DC]">{member.name}</h3>
-                  <span className="text-xs font-mono text-[#E8913C] block mt-0.5">
+                  <span className="text-xs font-mono text-[#E8913C] block mt-1 font-semibold">
                     {member.role}
                   </span>
-                  <p className="text-xs font-body text-[#9EA5A8] mt-2 leading-relaxed">
+                  <p className="text-xs font-body text-[#9EA5A8] mt-3 leading-relaxed text-left sm:text-center">
                     {member.responsibility}
                   </p>
                 </div>
+                {member.skills && (
+                  <div className="pt-4 border-t border-[rgba(237,231,220,0.08)] flex flex-wrap gap-1.5 justify-center">
+                    {member.skills.map((s) => (
+                      <span
+                        key={s}
+                        className="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-[#161A1F] text-[#9EA5A8] border border-[rgba(237,231,220,0.1)]"
+                      >
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
