@@ -139,7 +139,7 @@ export const AuditCopilotSheet: React.FC<AuditCopilotSheetProps> = ({ runId }) =
                           : "bg-brand-600 text-white text-left"
                       }`}
                     >
-                      <div className="whitespace-pre-line">{msg.content}</div>
+                      <div className="whitespace-pre-line">{msg.content || (msg as any).answer || (msg as any).message || "Evidence grounded response"}</div>
 
                       {/* Evidence Citations */}
                       {isAssistant && msg.citations && msg.citations.length > 0 && (

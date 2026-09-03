@@ -80,13 +80,32 @@ async def post_copilot_message(session_id: str, request: CopilotMessageRequest):
         )
 
     run_id = session.get("run_id", "run_default")
+
+    # 1. Save user message to session history
+    user_msg = {
+        "message_id": f"msg_usr_{int(time.time()*1000)}",
+        "session_id": session_id,
+        "run_id": run_id,
+        "role": "user",
+        "content": request.message,
+        "message": request.message,
+        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    stage_store.add_copilot_message(session_id, user_msg)
+
+    # 2. Process AI Copilot response
     response = await copilot_service.process_message(
         session_id=session_id,
         run_id=run_id,
         request=request,
     )
 
-    stage_store.add_copilot_message(session_id, response.model_dump())
+    # 3. Save assistant response to session history
+    assistant_dict = response.model_dump()
+    assistant_dict["role"] = "assistant"
+    assistant_dict["content"] = response.answer
+    stage_store.add_copilot_message(session_id, assistant_dict)
+
     return response
 
 

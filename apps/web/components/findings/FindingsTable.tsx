@@ -87,7 +87,7 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({ runId }) => {
 
           <div className="text-xs font-mono text-slate-500">
             {data ? (
-              <span>Showing {data.items.length} of {data.total} prioritized findings</span>
+              <span>Showing {Array.isArray(data?.items) ? data.items.length : 0} of {data?.total ?? 0} prioritized findings</span>
             ) : (
               <span>Loading findings...</span>
             )}
@@ -193,7 +193,7 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({ runId }) => {
                   <td className="py-3 px-4 text-center"><div className="h-6 w-16 bg-slate-200 rounded mx-auto" /></td>
                 </tr>
               ))
-            ) : data?.items && data.items.length > 0 ? (
+            ) : Array.isArray(data?.items) && data.items.length > 0 ? (
               data.items.map((finding: Finding) => (
                 <tr
                   key={finding.finding_id}
@@ -291,7 +291,7 @@ export const FindingsTable: React.FC<FindingsTableProps> = ({ runId }) => {
       {data && (
         <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
           <div>
-            Showing {data.items.length} items (Page cursor: {cursor || "Start"})
+            Showing {Array.isArray(data?.items) ? data.items.length : 0} items (Page cursor: {cursor || "Start"})
           </div>
 
           <div className="flex items-center gap-2">

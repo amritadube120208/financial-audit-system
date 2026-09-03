@@ -25,7 +25,14 @@ export async function sendCopilotMessage(
 
 export async function getCopilotMessages(sessionId: string): Promise<CopilotMessage[]> {
   const res = await apiClient<any>(`/api/v1/copilot/sessions/${sessionId}/messages`);
-  if (Array.isArray(res)) return res;
-  if (res && Array.isArray(res.messages)) return res.messages;
-  return [];
+  const rawList = Array.isArray(res) ? res : Array.isArray(res?.messages) ? res.messages : [];
+  return rawList.map((m: any) => ({
+    message_id: m.message_id || `msg_${Math.random()}`,
+    session_id: m.session_id || sessionId,
+    role: m.role || (m.answer ? "assistant" : "user"),
+    content: m.content || m.answer || m.message || "",
+    grounding_mode: m.grounding_mode || m.mode || "llm_grounded",
+    citations: m.citations || [],
+    created_at: m.created_at || new Date().toISOString(),
+  }));
 }
