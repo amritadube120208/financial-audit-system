@@ -23,7 +23,10 @@ async def list_findings(run_id: str, limit: int = 25, offset: int = 0, severity:
 
     # Filter by detector if specified
     if detector and detector.upper() != "ALL":
-        cases = [c for c in cases if c.get("primary_detector", "").upper() == detector.upper() or detector.upper() in str(c.get("anomaly_types", [])).upper()]
+        family = {"RULES": "rules", "GRAPH_CYCLES": "graph", "ISOLATION_FOREST": "ml"}.get(detector.upper())
+        cases = [c for c in cases if (family and c.get("detector_scores", {}).get(family, 0) > 0)
+                 or c.get("primary_detector", "").upper() == detector.upper()
+                 or detector.upper() in str(c.get("anomaly_types", [])).upper()]
 
     # Filter by search string if specified
     if search:
@@ -32,6 +35,8 @@ async def list_findings(run_id: str, limit: int = 25, offset: int = 0, severity:
             c for c in cases
             if s_lower in str(c.get("title", "")).lower()
             or s_lower in str(c.get("transaction_id", "")).lower()
+            or s_lower in str(c.get("transaction_ids", [])).lower()
+            or s_lower in str(c.get("entity_ids", [])).lower()
             or s_lower in str(c.get("vendor_name", "")).lower()
             or s_lower in str(c.get("rule_code", "")).lower()
         ]

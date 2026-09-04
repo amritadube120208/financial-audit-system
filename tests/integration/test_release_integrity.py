@@ -44,10 +44,19 @@ async def test_exact_run_isolation_exports_and_html_escaping():
             tx = await c.get(f'/api/v1/audit-runs/{run_id}/transactions')
             assert tx.status_code == 200
             assert {t['counterparty_name'] for t in tx.json()['transactions']} == {vendor}
+            assert all(t['is_suspicious'] and t['flags'] for t in tx.json()['items'])
+            page_one = (await c.get(f'/api/v1/audit-runs/{run_id}/transactions?limit=1')).json()
+            page_two = (await c.get(f'/api/v1/audit-runs/{run_id}/transactions?limit=1&offset=1')).json()
+            assert page_one['items'][0]['transaction_id'] != page_two['items'][0]['transaction_id']
+            filtered = (await c.get(f'/api/v1/audit-runs/{run_id}/transactions', params={'suspicious_only': True, 'vendor': vendor})).json()
+            assert filtered['total'] == 2
+            assert (await c.get(f'/api/v1/audit-runs/{run_id}/transactions?vendor=missing-vendor')).json()['total'] == 0
             summary = (await c.get(f'/api/v1/audit-runs/{run_id}/summary')).json()['metrics']
             assert summary['total_value_inr'] == amount * 2
             findings = (await c.get(f'/api/v1/audit-runs/{run_id}/findings')).json()['findings']
             assert findings
+            assert (await c.get(f'/api/v1/audit-runs/{run_id}/findings?search=SAME-2')).json()['total'] > 0
+            assert (await c.get(f'/api/v1/audit-runs/{run_id}/findings?detector=RULES')).json()['total'] > 0
             results.append((run_id, findings[0]['finding_id']))
             assert (await c.get(f'/api/v1/audit-runs/{run_id}/export?format=csv')).status_code == 200
             html = (await c.get(f'/api/v1/audit-runs/{run_id}/report/printable')).text

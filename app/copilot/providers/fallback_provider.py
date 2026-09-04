@@ -67,11 +67,12 @@ class DeterministicFallbackProvider(BaseLLMProvider):
         case_id = case_info.get("case_id") or case_info.get("finding_id")
         title = case_info.get("title", "Investigation Case")
         score = float(case_info.get("risk_score", risk_breakdown.get("risk_score", 0.0)))
-        severity = case_info.get("severity", risk_breakdown.get("severity", "EVALUATING"))
+        severity = str(case_info.get("severity", risk_breakdown.get("severity", "EVALUATING"))).split(".")[-1]
         exposure = float(case_info.get("monetary_exposure", 0.0))
         anomalies = case_info.get("anomaly_types", risk_breakdown.get("anomaly_types", []))
         entities = case_info.get("entity_ids", [])
         evidence_list = case_info.get("evidence", [])
+        transaction_ids = case_info.get("transaction_ids", [])
 
         # Intent 1: Fraud Classification Guardrail Refusal
         if "fraud" in msg_lower or "scam" in msg_lower or "criminal" in msg_lower or "is this fraud" in msg_lower:
@@ -115,11 +116,25 @@ class DeterministicFallbackProvider(BaseLLMProvider):
                     f"To simulate risk changes without a specific detector, select an investigation case from the queue and specify the engine to omit (Rules, ML, or Graph)."
                 )
 
+        # Document requests stay attached to the selected case's real evidence.
+        elif "document" in msg_lower and case_id:
+            lines = [f"**Supporting documents for {case_id}:**",
+                     f"Transactions: {', '.join(transaction_ids)}.",
+                     f"Counterparties: {', '.join(entities)}.",
+                     "Request original invoices, purchase orders, receipt/service evidence, payment vouchers, bank statements, and approval records."]
+            if any("BACKDAT" in str(a).upper() or "PERIOD" in str(a).upper() for a in anomalies):
+                lines.append("Request the dated source documents, ERP posting audit trail, manual-journal authorization, and cut-off explanation.")
+            if any("GST" in str(a).upper() for a in anomalies):
+                lines.append("Request the purchase register, supplier tax invoice, relevant GSTR-2B record, and reconciliation working. The ledger marker is not proof of a tax discrepancy.")
+            lines.append("The auditor should verify these records before reaching a conclusion.")
+            answer = "\n\n".join(lines)
+
         # Intent 4: Recommended Audit Procedures
-        elif "procedure" in msg_lower or "step" in msg_lower or "checklist" in msg_lower or "what should i audit" in msg_lower or "next" in msg_lower:
+        elif any(k in msg_lower for k in ("procedure", "step", "checklist", "what should i audit", "next", "verify")):
             if proc_res and proc_res.get("recommended_procedures"):
                 procedures = proc_res.get("recommended_procedures", [])
-                lines = [f"**Recommended Statutory Audit Procedures for {case_id or 'Investigation'}:**\n"]
+                lines = [f"**Recommended Audit Procedures for {case_id or 'Investigation'}:**\n",
+                         f"Transactions: {', '.join(transaction_ids)}. Counterparties: {', '.join(entities)}."]
                 for i, p in enumerate(procedures, 1):
                     lines.append(f"**{i}. {p.get('title')}:**")
                     for s in p.get("steps", []):
@@ -136,14 +151,15 @@ class DeterministicFallbackProvider(BaseLLMProvider):
         # Intent 5: Money Flow Graph Tracing
         elif "trace" in msg_lower or "money" in msg_lower or "flow" in msg_lower or "graph" in msg_lower or "circular" in msg_lower:
             if trace_info and trace_info.get("cycle_detected"):
-                entity_chain = " → ".join(entities) if entities else "Identified Counterparties"
-                answer = (
-                    f"**Money Flow Graph Forensic Trace for {case_id or 'Selected Case'}:**\n\n"
-                    f"• **Topology:** Circular flow loop detected across: `{entity_chain}`\n"
-                    f"• **Linked Transactions:** {len(trace_info.get('transaction_ids', []))} vouchers identified in cycle\n"
-                    f"• **Monetary Exposure:** ₹{exposure:,.2f}\n"
-                    f"• **Audit Recommendation:** Reconcile debit/credit timing across involved entity bank statements to verify commercial substance."
-                )
+                graph = trace_info.get("graph_payload") or {}
+                lines = [f"**Money-flow trace for {case_id or trace_info.get('case_id')}:**\n"]
+                for raw_edge in graph.get("edges", []):
+                    edge = raw_edge.get("data", raw_edge)
+                    amount = edge.get("amount_inr", edge.get("amount"))
+                    amount_text = f"₹{float(amount):,.2f}" if amount is not None else "amount not recorded"
+                    lines.append(f"• {edge.get('source')} → {edge.get('target')}: {amount_text}; transaction {edge.get('transaction_id')}; posted {edge.get('posted_at', edge.get('timestamp', 'date not recorded'))}.")
+                lines.append(f"\nCase exposure: ₹{exposure:,.2f}. Reconcile the transfers to bank statements and supporting contracts to assess commercial substance. A circular pattern does not establish fraud.")
+                answer = "\n".join(lines)
             elif case_id:
                 answer = (
                     f"**Money Flow Trace for {case_id}:**\n\n"
@@ -175,13 +191,26 @@ class DeterministicFallbackProvider(BaseLLMProvider):
         elif case_id:
             detector_scores = risk_breakdown.get("detector_scores", case_info.get("detector_scores", {}))
             score_summary = ", ".join([f"{k.capitalize()}: {v}" for k, v in detector_scores.items()]) if detector_scores else "Multi-Engine Fusion"
-            evidence_summary = "\n".join([f"  • {e}" for e in evidence_list[:4]]) if evidence_list else "  • Multi-detector anomaly convergence"
+            evidence_lines = []
+            for evidence in evidence_list:
+                if isinstance(evidence, dict):
+                    value = evidence.get("value")
+                    if isinstance(value, bool):
+                        value = "Yes" if value else "No"
+                    unit = f" {evidence['unit']}" if evidence.get("unit") else ""
+                    evidence_lines.append(f"  • {evidence.get('label', evidence.get('key', 'Evidence'))}: {value}{unit}")
+                else:
+                    evidence_lines.append(f"  • {evidence}")
+            evidence_summary = "\n".join(evidence_lines) or "  • No detailed evidence recorded"
 
             answer = (
                 f"**Statutory Audit Finding Analysis: {case_id}**\n\n"
                 f"• **Title:** {title}\n"
                 f"• **Risk Score:** **{score:.1f} / 100.0 ({severity})**\n"
                 f"• **Monetary Exposure:** ₹{exposure:,.2f}\n"
+                f"• **Transactions:** {', '.join(transaction_ids)}\n"
+                f"• **Counterparties:** {', '.join(entities)}\n"
+                f"• **Signals:** {', '.join(anomalies)}\n"
                 f"• **Contributing Engine Scores:** {score_summary}\n\n"
                 f"**Grounded Evidence Points:**\n{evidence_summary}\n\n"
                 f"**Action Required:** Prioritize substantive voucher audit and counterparty confirmation."

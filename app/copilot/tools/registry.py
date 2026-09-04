@@ -56,9 +56,11 @@ class CopilotTools:
                 "cycle_detected": False,
                 "error": f"Case '{case_id}' not found for money-flow tracing.",
             }
+        graph = finding.get("graph_payload") or {}
         return {
             "case_id": case_id,
-            "cycle_detected": True,
+            "cycle_detected": bool(graph.get("nodes") and graph.get("edges")),
+            "monetary_exposure": finding.get("monetary_exposure"),
             "transaction_ids": finding.get("transaction_ids", []),
             "entity_ids": finding.get("entity_ids", []),
             "graph_payload": finding.get("graph_payload"),
@@ -156,7 +158,7 @@ class CopilotTools:
                 "steps": [
                     "Reconcile Purchase Register entry against GSTR-2B filing portal.",
                     "Verify supplier GSTIN registration status and GST return filing frequency.",
-                    "Disallow ineligible ITC under Section 16(2)(aa) if invoice absent in GSTR-2B."
+                    "Have the auditor assess eligibility using supporting tax records; a ledger marker alone does not establish an ITC discrepancy."
                 ]
             })
 
@@ -176,9 +178,20 @@ class CopilotTools:
                 "anomaly": "PERIOD_END_POSTING",
                 "title": "Year-End Expense Cutoff Audit Procedure",
                 "steps": [
-                    "Inspect Goods Receipt Notes (GRNs) and receiving reports for March 28–31 postings.",
+                    "Inspect Goods Receipt Notes (GRNs) and receiving reports around the flagged posting dates.",
                     "Verify whether liabilities were recorded in correct accounting period.",
-                    "Test subsequent period payments (April FY27) for unrecorded liabilities."
+                    "Test subsequent-period payments for unrecorded liabilities."
+                ]
+            })
+
+        if any("BACKDAT" in str(a).upper() for a in anomalies):
+            procedures.append({
+                "anomaly": "BACKDATED_POSTING",
+                "title": "Delayed Posting and Manual Approval Review",
+                "steps": [
+                    "Request the original dated invoice, journal voucher, and ERP posting audit trail.",
+                    "Inspect approval records and the explanation for the delay between document and posting dates.",
+                    "Verify that the entry belongs in the recorded accounting period."
                 ]
             })
 

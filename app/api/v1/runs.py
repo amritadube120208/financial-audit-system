@@ -168,7 +168,7 @@ async def get_gst_reconciliation(run_id: str):
 
 
 @router.get("/{run_id}/transactions")
-async def get_audit_run_transactions(run_id: str, limit: int = 25, offset: int = 0, search: str | None = None):
+async def get_audit_run_transactions(run_id: str, limit: int = 25, offset: int = 0, search: str | None = None, vendor: str | None = None, suspicious_only: bool = False):
     """Retrieve canonical transactions for audit run with optional live search filter."""
     result = stage_store.get_run_result(run_id)
     if not result:
@@ -179,24 +179,37 @@ async def get_audit_run_transactions(run_id: str, limit: int = 25, offset: int =
 
     dataset_id = result.get("dataset_id")
     txs = stage_store.get_transactions_for_dataset(dataset_id) if dataset_id else []
+    flags_by_transaction: dict[str, set[str]] = {}
+    for case in result.get("cases", []):
+        for transaction_id in case.get("transaction_ids", []):
+            flags_by_transaction.setdefault(transaction_id, set()).update(case.get("anomaly_types", []))
+    if suspicious_only:
+        txs = [t for t in txs if t.transaction_id in flags_by_transaction]
+    if vendor:
+        txs = [t for t in txs if vendor.lower() in str(t.counterparty_name or t.counterparty_id).lower()]
 
     if search:
         s_lower = search.lower()
         txs = [
             t for t in txs
             if s_lower in str(t.transaction_id).lower()
-            or s_lower in str(t.debit_account or t.credit_account).lower()
+            or s_lower in str(t.debit_account).lower()
+            or s_lower in str(t.credit_account).lower()
+            or s_lower in str(t.counterparty_name).lower()
             or s_lower in str(t.counterparty_id).lower()
             or s_lower in str(t.narration).lower()
         ]
 
+    limit, offset = max(1, min(limit, 1000)), max(0, offset)
     sliced = txs[offset : offset + limit]
+    items = [{**t.model_dump(), "is_suspicious": t.transaction_id in flags_by_transaction,
+              "flags": sorted(flags_by_transaction.get(t.transaction_id, set()))} for t in sliced]
     return {
         "run_id": run_id,
         "total": len(txs),
         "limit": limit,
         "offset": offset,
-        "items": [t.model_dump() for t in sliced],
-        "transactions": [t.model_dump() for t in sliced],
+        "items": items,
+        "transactions": items,
         "total_returned": len(sliced),
     }

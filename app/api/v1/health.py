@@ -133,7 +133,8 @@ async def version():
         "pipeline_version": settings.PIPELINE_VERSION,
         "scoring_config_version": settings.SCORING_CONFIG_VERSION,
         "detector_config_version": settings.DETECTOR_CONFIG_VERSION,
-        "git_commit": os.getenv("GIT_COMMIT"),
+        "git_commit": os.getenv("RENDER_GIT_COMMIT") or os.getenv("GIT_COMMIT"),
+        "git_branch": os.getenv("RENDER_GIT_BRANCH"),
         "engines": {
             "rules_engine": settings.DETECTOR_CONFIG_VERSION,
             "isolation_forest": settings.DETECTOR_CONFIG_VERSION,

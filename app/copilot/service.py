@@ -138,7 +138,7 @@ class CopilotService:
                     )
 
         # Intent 4: Recommended Audit Procedures
-        if any(k in msg_lower for k in ("procedure", "step", "checklist", "audit next", "next step", "what should i")):
+        if any(k in msg_lower for k in ("procedure", "step", "checklist", "next", "verify", "document", "what should i")):
             if target_case_id:
                 proc_res = copilot_tools.get_recommended_audit_procedures(run_id=run_id, case_id=target_case_id)
                 tool_results.append({"tool_name": "get_recommended_audit_procedures", "result": proc_res})
@@ -187,8 +187,8 @@ class CopilotService:
                         )
                     )
 
-        # Fallback to run summary or case finding if no specific tool matched
-        if len(used_tools) <= 1:
+        # Every selected-case answer needs the same authoritative case context.
+        if "get_finding" not in used_tools:
             if target_case_id and case_res:
                 tool_results.append({"tool_name": "get_finding", "result": case_res})
                 used_tools.append("get_finding")
