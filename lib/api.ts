@@ -128,11 +128,31 @@ export async function getAuditRun(runId: string): Promise<AuditRunResponse> {
 }
 
 export async function getAuditRunSummary(runId: string): Promise<AuditSummaryResponse> {
-  const res = await apiClient.get<AuditSummaryResponse>(`/api/v1/audit-runs/${runId}/summary`);
-  return res.data;
+  const [res, report] = await Promise.all([
+    apiClient.get<AuditSummaryResponse>(`/api/v1/audit-runs/${runId}/summary`),
+    apiClient.get<{ risk_distribution: Record<string, number> }>(`/api/v1/audit-runs/${runId}/report`),
+  ]);
+  const counts = report.data.risk_distribution;
+  return {
+    ...res.data,
+    metrics: {
+      ...res.data.metrics,
+      critical_findings: counts.CRITICAL ?? 0,
+      high_findings: counts.HIGH ?? 0,
+      medium_findings: counts.MEDIUM ?? 0,
+      low_findings: counts.LOW ?? 0,
+    },
+  };
 }
 
 // 4. Findings
+function normalizeFinding(finding: FindingItem): FindingItem {
+  return {
+    ...finding,
+    severity: String(finding.severity).split(".").pop()!.toLowerCase() as FindingItem["severity"],
+  };
+}
+
 export async function getAuditRunFindings(
   runId: string,
   params?: {
@@ -146,7 +166,7 @@ export async function getAuditRunFindings(
   const res = await apiClient.get<FindingsListResponse>(`/api/v1/audit-runs/${runId}/findings`, {
     params,
   });
-  return res.data;
+  return { ...res.data, findings: res.data.findings.map(normalizeFinding) };
 }
 
 export async function getFindingDetail(findingId: string): Promise<FindingItem> {
