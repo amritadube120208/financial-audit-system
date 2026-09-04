@@ -58,6 +58,15 @@ def test_hero_without_graph_is_not_reported_as_a_cycle(evidence_run):
 
 
 @pytest.mark.asyncio
+async def test_report_counts_enum_and_string_severities(evidence_run):
+    from app.api.v1.reports import get_audit_report
+    report = await get_audit_report(evidence_run)
+    assert report['executive_summary']['critical_cases'] == 1
+    assert report['executive_summary']['high_cases'] == 1
+    assert sum(report['risk_distribution'].values()) == 2
+
+
+@pytest.mark.asyncio
 async def test_case_from_another_run_never_leaks_into_answer(evidence_run):
     stage_store.save_run_result('empty-evidence-run', {'run_id': 'empty-evidence-run', 'status': 'READY', 'cases': []})
     response = await copilot_service.process_message('other-session', 'empty-evidence-run',

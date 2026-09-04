@@ -103,7 +103,8 @@ async def get_audit_report(run_id: str):
             detail={"code": "RUN_NOT_FOUND", "message": f"Audit run '{run_id}' not found."},
         )
 
-    cases = result.get("cases", [])
+    cases = [{**case, "severity": str(case.get("severity", "")).split(".")[-1].upper()}
+             for case in result.get("cases", [])]
     txns_analyzed = result.get("transactions_analyzed", 0)
     dataset_id = result.get("dataset_id", "ds_unknown")
     dataset_ref = stage_store.get_dataset(dataset_id)
