@@ -20,6 +20,7 @@ import {
   Download,
   Filter,
   FileText,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -82,8 +83,9 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
   } = useAuditUiStore();
 
   const { clearActiveRun } = useAuditContextStore();
+  // Active run ID resolution: route param > query param (fresh session starts empty)
   const [activeRunId, setActiveRunId] = useState<string | null>(
-    initialRunId || queryRunId || lastActiveRunId || null
+    initialRunId || queryRunId || null
   );
 
   const handleNewAudit = () => {
@@ -218,7 +220,7 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
     return findingsList.find((f) => f.finding_id === selectedFindingId) || null;
   }, [findingsList, selectedFindingId]);
 
-  // Query Graph for active finding
+  // Query Graph for active finding (never use another finding's graph as fallback)
   const graphFindingId = useMemo(() => {
     if (activeFinding?.has_graph) return activeFinding.finding_id;
     return null;
@@ -301,6 +303,17 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
     }
   };
 
+  const handleStartNewAudit = () => {
+    setActiveRunId(null);
+    setLastActiveRunId(null);
+    setSelectedFile(null);
+    setDatasetInfo(null);
+    setUploadError(null);
+    setLiveEvent(null);
+    closeFindingDrawer();
+    setIsTxnDrawerOpen(false);
+  };
+
   const handleTxnSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setTxnPage(0);
@@ -353,6 +366,15 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {activeRunId && (
+              <button
+                onClick={handleStartNewAudit}
+                className="inline-flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-sm border border-[rgba(237,231,220,0.15)] bg-[#101317] hover:border-[#E8913C] text-[#9EA5A8] hover:text-[#EDE7DC] transition-colors"
+                title="Clear current audit and start a fresh run"
+              >
+                <Plus className="h-3 w-3" /> NEW AUDIT
+              </button>
+            )}
             {activeRunId && isFinalized && (
               <>
                 <a
@@ -639,6 +661,19 @@ export function AuditWorkspace({ initialRunId }: AuditWorkspaceProps) {
             </div>
           )}
         </section>
+
+        {/* Fresh state before upload */}
+        {!activeRunId && (
+          <div className="p-8 rounded-sm border border-[rgba(237,231,220,0.13)] bg-[#101317] text-center space-y-3 font-mono">
+            <div className="flex items-center justify-center gap-2 text-xs uppercase tracking-[0.14em] text-[#E8913C]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#E8913C]" />
+              AWAITING LEDGER INGESTION
+            </div>
+            <p className="text-xs text-[#9EA5A8] max-w-lg mx-auto font-body">
+              Upload an accounting ledger (.xlsx or .csv) above and click &quot;Analyze Ledger&quot; to launch the multi-engine audit pipeline.
+            </p>
+          </div>
+        )}
 
         {/* ============================================================ */}
         {/* SECTION 4: ANALYSIS PROGRESS (Real state machine pipeline)   */}

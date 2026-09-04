@@ -1,6 +1,5 @@
 import type { AuditProgressEvent } from "./types";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+import { API_BASE } from "./api";
 
 export interface SseSubscriberCallbacks {
   onEvent: (event: AuditProgressEvent) => void;

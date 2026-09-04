@@ -41,31 +41,40 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
 
     const elements: cytoscape.ElementDefinition[] = [];
 
-    // Map Nodes
-    graphData.nodes.forEach((node: GraphNode) => {
+    // Map Nodes (support both { data: { id, label } } and flat { id, label })
+    (graphData.nodes || []).forEach((node: any) => {
+      const data = node.data || node;
+      const id = String(data.id || "");
+      if (!id) return;
       elements.push({
         group: "nodes",
         data: {
-          id: node.id,
-          label: node.label || node.id,
-          type: node.type || "entity",
-          isSuspicious: node.is_suspicious || false,
-          exposure: node.total_exposure || 0,
+          id,
+          label: String(data.label || id),
+          type: String(data.kind || data.type || "entity"),
+          isSuspicious: Boolean(data.is_suspicious || data.kind === "vendor"),
+          exposure: Number(data.total_exposure || 0),
         },
       });
     });
 
-    // Map Edges
-    graphData.edges.forEach((edge: GraphEdge) => {
+    // Map Edges (support both { data: { source, target, amount_inr } } and flat { source, target, weight })
+    (graphData.edges || []).forEach((edge: any, idx: number) => {
+      const data = edge.data || edge;
+      const source = String(data.source || "");
+      const target = String(data.target || "");
+      if (!source || !target) return;
+      const id = String(data.id || `edge-${idx}-${source}-${target}`);
+      const weight = Number(data.amount_inr ?? data.amount ?? data.weight ?? 0);
       elements.push({
         group: "edges",
         data: {
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          weight: edge.weight,
-          label: formatINR(edge.weight),
-          isCycle: edge.is_cycle || false,
+          id,
+          source,
+          target,
+          weight,
+          label: weight > 0 ? formatINR(weight) : "",
+          isCycle: Boolean(data.is_cycle ?? true),
         },
       });
     });
@@ -79,24 +88,25 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
         {
           selector: "node",
           style: {
-            "background-color": "#1e293b",
+            "background-color": "#101317",
             "border-width": 2,
-            "border-color": "#0ea5e9",
-            color: "#f8fafc",
+            "border-color": "#2E6B72",
+            color: "#EDE7DC",
             label: "data(label)",
             "font-size": "11px",
+            "font-family": "var(--font-mono, monospace)",
             "text-valign": "bottom",
-            "text-margin-y": 5,
-            width: 38,
-            height: 38,
+            "text-margin-y": 6,
+            width: 42,
+            height: 42,
           },
         },
         {
           selector: "node[?isSuspicious]",
           style: {
-            "border-color": "#ef4444",
-            "background-color": "#450a0a",
-            "border-width": 3,
+            "border-color": "#E8913C",
+            "background-color": "#161A1F",
+            "border-width": 2.5,
           },
         },
         {
@@ -108,19 +118,20 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
             "target-arrow-shape": "triangle",
             "curve-style": "bezier",
             label: "data(label)",
-            "font-size": "9px",
-            color: "#94a3b8",
+            "font-size": "10px",
+            "font-family": "var(--font-mono, monospace)",
+            color: "#EDE7DC",
             "text-rotation": "autorotate",
-            "text-background-color": "#0f172a",
-            "text-background-opacity": 0.8,
-            "text-background-padding": "2px",
+            "text-background-color": "#0A0C0E",
+            "text-background-opacity": 0.9,
+            "text-background-padding": "3px",
           },
         },
         {
           selector: "edge[?isCycle]",
           style: {
-            "line-color": "#ef4444",
-            "target-arrow-color": "#ef4444",
+            "line-color": "#E8913C",
+            "target-arrow-color": "#E8913C",
             width: 3,
             "line-style": "solid",
           },
@@ -128,17 +139,16 @@ export function GraphViewer({ graphData, isLoading }: GraphViewerProps) {
         {
           selector: ":selected",
           style: {
-            "border-color": "#10b981",
+            "border-color": "#E8913C",
             "border-width": 4,
-            "line-color": "#10b981",
-            "target-arrow-color": "#10b981",
+            "line-color": "#E8913C",
+            "target-arrow-color": "#E8913C",
           },
         },
       ],
       layout: {
-        name: "cose",
-        animate: false,
-        padding: 40,
+        name: "circle",
+        padding: 50,
       },
     });
 

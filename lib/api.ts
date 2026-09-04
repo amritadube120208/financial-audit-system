@@ -14,14 +14,35 @@ import type {
   TransactionsListResponse,
 } from "./types";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const isBrowser = typeof window !== "undefined";
+const isLocalhost =
+  isBrowser &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "0.0.0.0");
+
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (isBrowser && !isLocalhost
+    ? "https://financial-audit-system.onrender.com"
+    : process.env.NODE_ENV === "production"
+      ? "https://financial-audit-system.onrender.com"
+      : "http://127.0.0.1:8000");
 
 export const apiClient = axios.create({
   baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000,
+  timeout: 60000,
+});
+
+// Automatically strip Content-Type for FormData so browser computes boundary
+apiClient.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
+  return config;
 });
 
 export function getApiErrorCode(error: unknown): string | undefined {
@@ -71,9 +92,6 @@ export async function uploadDataset(
   formData.append("file", file);
 
   const res = await apiClient.post<DatasetUploadResponse>("/api/v1/datasets", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
     onUploadProgress: (evt) => {
       if (evt.total && onProgress) {
         const pct = Math.round((evt.loaded * 100) / evt.total);
