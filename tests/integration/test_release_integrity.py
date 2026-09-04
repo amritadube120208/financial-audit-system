@@ -29,6 +29,16 @@ def test_gst_sample_ids_and_tax_ratios_are_not_evidence():
     assert findings[0].transaction_ids == ['G2']
 
 
+def test_reversal_requires_opposite_direction_in_the_same_account_context():
+    content = b'transaction_id,posting_date,amount,counterparty_name,debit_account,credit_account\nP1,2026-02-01,73100,One Supplier,Expense,Bank\nP2,2026-02-01,73100,One Supplier,Expense,Bank\nR1,2026-02-02,-73100,One Supplier,Expense,Bank\nOTHER,2026-02-02,-73100,Other Supplier,Other Expense,Other Bank\n'
+    _, rows = load_dataset(content, 'reversals.csv', 'ds_reversal_contract')
+    reversals = RulesDetector()._detect_rapid_reversals(rows, 'reversal-contract')
+    pairs = {frozenset(f.transaction_ids) for f in reversals}
+    assert frozenset(['P1', 'P2']) not in pairs
+    assert frozenset(['P1', 'R1']) in pairs
+    assert not any('OTHER' in pair for pair in pairs)
+
+
 @pytest.mark.asyncio
 async def test_exact_run_isolation_exports_and_html_escaping():
     assert model_registry.load_default_model()

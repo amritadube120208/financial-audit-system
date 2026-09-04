@@ -395,9 +395,15 @@ class RulesDetector(BaseDetector):
                     break
 
                 amt2 = float(t2.amount)
-                # Check for equal and opposite amount or reverse entity direction
-                is_opposite_amount = (amt1 * amt2 < 0 and abs(abs(amt1) - abs(amt2)) / max(abs(amt1), abs(amt2)) <= 0.02)
-                is_reverse_entity = (t1.entity_id and t2.entity_id and t1.entity_id == t2.entity_id and abs(abs(amt1) - abs(amt2)) / max(abs(amt1), abs(amt2)) <= 0.02)
+                # Similar same-direction payments are not reversals.
+                similar_amount = abs(abs(amt1) - abs(amt2)) / max(abs(amt1), abs(amt2)) <= 0.02
+                same_entity = bool(t1.entity_id and t1.entity_id == t2.entity_id)
+                same_accounts = bool(t1.debit_account and t1.credit_account
+                                     and t1.debit_account == t2.debit_account and t1.credit_account == t2.credit_account)
+                is_opposite_amount = amt1 * amt2 < 0 and similar_amount and (same_entity or same_accounts)
+                is_reverse_entity = bool(similar_amount and t1.debit_account and t1.credit_account
+                                         and t1.debit_account != t1.credit_account
+                                         and t1.debit_account == t2.credit_account and t1.credit_account == t2.debit_account)
 
                 if is_opposite_amount or is_reverse_entity:
                     count += 1
