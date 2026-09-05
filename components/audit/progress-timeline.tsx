@@ -106,7 +106,9 @@ export function ProgressTimeline({
         <div className="mt-6 p-3 rounded-lg border border-border/80 bg-background/50 font-mono text-xs text-muted-foreground flex items-center gap-2">
           <span className="text-emerald-400">&gt;</span>
           <span>{latestEvent.message}</span>
-          <span className="ml-auto text-[10px] text-muted-foreground/60">{latestEvent.timestamp.slice(11, 19)}</span>
+          <span className="ml-auto text-[10px] text-muted-foreground/60">
+            {latestEvent.timestamp ? latestEvent.timestamp.slice(11, 19) : "LIVE"}
+          </span>
         </div>
       )}
     </div>
